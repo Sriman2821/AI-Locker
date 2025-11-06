@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Plus, Edit2, Trash2, Save } from "lucide-react";
 import { motion } from "framer-motion";
@@ -7,360 +6,353 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { base44 } from "@/api/productionClient";
 
 export default function ManageToolsModal({ onClose }) {
-  const [categoryForm, setCategoryForm] = useState({ name: "", order: 0 });
-  const [toolForm, setToolForm] = useState({
-    category_id: "",
-    name: "",
-    icon_name: "",
-    url: "",
-    order: 0,
-  });
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [editingTool, setEditingTool] = useState(null);
+	const queryClient = useQueryClient();
 
-  const queryClient = useQueryClient();
+	// Local form state
+	const [categoryForm, setCategoryForm] = useState({ name: "", description: "" });
+	const [toolForm, setToolForm] = useState({ category_id: "", name: "", icon_name: "", url: "", description: "" });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["toolCategories"],
-    queryFn: () => base44.entities.ToolCategory.list("order"),
-  });
+	// Editing state
+	const [editingCategoryId, setEditingCategoryId] = useState(null);
+	const [editingToolId, setEditingToolId] = useState(null);
 
-  const { data: tools = [] } = useQuery({
-    queryKey: ["tools"],
-    queryFn: () => base44.entities.Tool.list("order"),
-  });
+	// Local edit buffers to avoid mutating query data directly
+	const [editCategoryValues, setEditCategoryValues] = useState({});
+	const [editToolValues, setEditToolValues] = useState({});
 
-  const createCategoryMutation = useMutation({
-    mutationFn: (data) => base44.entities.ToolCategory.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["toolCategories"]);
-      setCategoryForm({ name: "", order: 0 });
-    },
-  });
+	// Fetch categories and tools
+	const { data: categories = [] } = useQuery({
+		queryKey: ["toolCategories"],
+		queryFn: () => base44.entities.ToolCategory.list(),
+		select: (data) => (Array.isArray(data) ? data.sort((a, b) => a.name.localeCompare(b.name)) : []),
+	});
 
-  const updateCategoryMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ToolCategory.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["toolCategories"]);
-      setEditingCategory(null);
-    },
-  });
+	const { data: tools = [] } = useQuery({
+		queryKey: ["tools"],
+		queryFn: () => base44.entities.Tool.list(),
+		select: (data) => (Array.isArray(data) ? data.sort((a, b) => a.name.localeCompare(b.name)) : []),
+	});
 
-  const deleteCategoryMutation = useMutation({
-    mutationFn: (id) => base44.entities.ToolCategory.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["toolCategories"]);
-    },
-  });
+	// Mutations for categories
+	const createCategory = useMutation({
+		mutationFn: (data) => base44.entities.ToolCategory.create(data),
+		onSuccess: () => {
+			// Invalidate any queries whose key starts with 'toolCategories'
+			queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === 'toolCategories' });
+			setCategoryForm({ name: "", description: "" });
+			// optional small success feedback
+			try { window?.console?.log('Category created'); } catch (e) {}
+		},
+		onError: (err) => {
+			console.error('Create category error', err);
+			try { alert('Failed to create category: ' + (err?.message || err)); } catch (e) {}
+		},
+	});
 
-  const createToolMutation = useMutation({
-    mutationFn: (data) => base44.entities.Tool.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["tools"]);
-      setToolForm({ category_id: "", name: "", icon_name: "", url: "", order: 0 });
-    },
-  });
+	const updateCategory = useMutation({
+		mutationFn: ({ id, data }) => base44.entities.ToolCategory.update(id, data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === 'toolCategories' });
+			setEditingCategoryId(null);
+		},
+	});
 
-  const updateToolMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Tool.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["tools"]);
-      setEditingTool(null);
-    },
-  });
+	const deleteCategory = useMutation({
+		mutationFn: (id) => base44.entities.ToolCategory.delete(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === 'toolCategories' });
+			queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === 'tools' });
+		},
+	});
 
-  const deleteToolMutation = useMutation({
-    mutationFn: (id) => base44.entities.Tool.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["tools"]);
-    },
-  });
+	// Mutations for tools
+	const createTool = useMutation({
+		mutationFn: (data) => base44.entities.Tool.create(data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === 'tools' });
+			setToolForm({ category_id: "", name: "", icon_name: "", url: "", description: "" });
+			try { window?.console?.log('Tool created'); } catch (e) {}
+		},
+		onError: (err) => {
+			console.error('Create tool error', err);
+			try { alert('Failed to create tool: ' + (err?.message || err)); } catch (e) {}
+		},
+	});
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.95 }}
-        className="bg-white w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="bg-[#41436A] p-8 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-light text-white mb-1">Manage Tools & Categories</h2>
-            <p className="text-white/70 text-sm font-light">
-              Add, edit, and organize your tools
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/10 transition-colors"
-          >
-            <X className="w-5 h-5 text-white" strokeWidth={1.5} />
-          </button>
-        </div>
+	const updateTool = useMutation({
+		mutationFn: ({ id, data }) => base44.entities.Tool.update(id, data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === 'tools' });
+			setEditingToolId(null);
+		},
+	});
 
-        <div className="flex-1 overflow-y-auto p-8">
-          <Tabs defaultValue="categories" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 h-auto">
-              <TabsTrigger 
-                value="categories" 
-                className="data-[state=active]:bg-[#984063] data-[state=active]:text-white font-light py-2"
-              >
-                Categories
-              </TabsTrigger>
-              <TabsTrigger 
-                value="tools"
-                className="data-[state=active]:bg-[#984063] data-[state=active]:text-white font-light py-2"
-              >
-                Tools
-              </TabsTrigger>
-            </TabsList>
+	const deleteTool = useMutation({
+		mutationFn: (id) => base44.entities.Tool.delete(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ predicate: (query) => query.queryKey?.[0] === 'tools' });
+		},
+	});
 
-            <TabsContent value="categories" className="space-y-6">
-              {/* Add Category Form */}
-              <div className="bg-gray-50 p-6 border border-gray-200">
-                <h3 className="text-base font-normal text-[#41436A] mb-4">Add New Category</h3>
-                <div className="flex gap-4">
-                  <Input
-                    placeholder="Category name"
-                    value={categoryForm.name}
-                    onChange={(e) =>
-                      setCategoryForm({ ...categoryForm, name: e.target.value })
-                    }
-                    className="flex-1 border-gray-300 rounded-none focus:border-[#F64668]"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Order"
-                    value={categoryForm.order}
-                    onChange={(e) =>
-                      setCategoryForm({
-                        ...categoryForm,
-                        order: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-24 border-gray-300 rounded-none focus:border-[#F64668]"
-                  />
-                  <button
-                    onClick={() => createCategoryMutation.mutate(categoryForm)}
-                    disabled={!categoryForm.name}
-                    className="px-5 py-2 bg-[#984063] text-white hover:bg-[#F64668] disabled:opacity-50 disabled:hover:bg-[#984063] transition-colors text-sm font-light flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" strokeWidth={1.5} />
-                    Add
-                  </button>
-                </div>
-              </div>
+	// helpers
+	const [categoryError, setCategoryError] = useState("");
 
-              {/* Categories List */}
-              <div className="space-y-3">
-                {categories.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <p className="font-light">No categories yet</p>
-                  </div>
-                ) : (
-                  categories.map((category) => (
-                    <div
-                      key={category.id}
-                      className="flex items-center gap-4 p-5 bg-white border border-gray-200 hover:border-[#F64668] transition-all"
-                    >
-                      {editingCategory?.id === category.id ? (
-                        <>
-                          <Input
-                            value={editingCategory.name}
-                            onChange={(e) =>
-                              setEditingCategory({
-                                ...editingCategory,
-                                name: e.target.value,
-                              })
-                            }
-                            className="flex-1 border-gray-300 rounded-none focus:border-[#F64668]"
-                          />
-                          <Input
-                            type="number"
-                            value={editingCategory.order}
-                            onChange={(e) =>
-                              setEditingCategory({
-                                ...editingCategory,
-                                order: parseInt(e.target.value),
-                              })
-                            }
-                            className="w-24 border-gray-300 rounded-none focus:border-[#F64668]"
-                          />
-                          <button
-                            onClick={() =>
-                              updateCategoryMutation.mutate({
-                                id: category.id,
-                                data: editingCategory,
-                              })
-                            }
-                            className="px-3 py-2 bg-[#984063] text-white hover:bg-[#F64668] transition-colors"
-                          >
-                            <Save className="w-4 h-4" strokeWidth={1.5} />
-                          </button>
-                          <button
-                            onClick={() => setEditingCategory(null)}
-                            className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors"
-                          >
-                            <X className="w-4 h-4" strokeWidth={1.5} />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="flex-1 font-normal text-[#41436A]">{category.name}</span>
-                          <span className="text-sm text-gray-500 font-light">
-                            Order: {category.order}
-                          </span>
-                          <button
-                            onClick={() => setEditingCategory(category)}
-                            className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4" strokeWidth={1.5} />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm("Delete this category?")) {
-                                deleteCategoryMutation.mutate(category.id);
-                              }
-                            }}
-                            className="px-3 py-2 border border-gray-300 text-[#F64668] hover:bg-gray-50 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </TabsContent>
+	const handleCreateCategory = () => {
+		// Trim and validate
+		const name = (categoryForm.name || "").trim();
+		if (!name) {
+			setCategoryError("Please enter a category name");
+			return;
+		}
+		setCategoryError("");
+		// log for debugging so we can see what is being sent
+		try { console.debug('[ManageToolsModal] createCategory payload', { ...categoryForm, name }); } catch (e) {}
+		createCategory.mutate({ ...categoryForm, name });
+	};
 
-            <TabsContent value="tools" className="space-y-6">
-              {/* Add Tool Form */}
-              <div className="bg-gray-50 p-6 border border-gray-200">
-                <h3 className="text-base font-normal text-[#41436A] mb-4">Add New Tool</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <select
-                    value={toolForm.category_id}
-                    onChange={(e) =>
-                      setToolForm({ ...toolForm, category_id: e.target.value })
-                    }
-                    className="px-3 py-2 border border-gray-300 focus:border-[#F64668] focus:outline-none text-sm font-light text-[#41436A]"
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                  <Input
-                    placeholder="Tool name"
-                    value={toolForm.name}
-                    onChange={(e) => setToolForm({ ...toolForm, name: e.target.value })}
-                    className="border-gray-300 rounded-none focus:border-[#F64668]"
-                  />
-                  <Input
-                    placeholder="Icon name (e.g., Wrench)"
-                    value={toolForm.icon_name}
-                    onChange={(e) =>
-                      setToolForm({ ...toolForm, icon_name: e.target.value })
-                    }
-                    className="border-gray-300 rounded-none focus:border-[#F64668]"
-                  />
-                  <Input
-                    placeholder="URL"
-                    value={toolForm.url}
-                    onChange={(e) => setToolForm({ ...toolForm, url: e.target.value })}
-                    className="border-gray-300 rounded-none focus:border-[#F64668]"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Order"
-                    value={toolForm.order}
-                    onChange={(e) =>
-                      setToolForm({ ...toolForm, order: parseInt(e.target.value) })
-                    }
-                    className="border-gray-300 rounded-none focus:border-[#F64668]"
-                  />
-                  <button
-                    onClick={() => createToolMutation.mutate(toolForm)}
-                    disabled={!toolForm.name || !toolForm.category_id || !toolForm.url}
-                    className="px-5 py-2 bg-[#984063] text-white hover:bg-[#F64668] disabled:opacity-50 disabled:hover:bg-[#984063] transition-colors text-sm font-light flex items-center gap-2 justify-center"
-                  >
-                    <Plus className="w-4 h-4" strokeWidth={1.5} />
-                    Add Tool
-                  </button>
-                </div>
-              </div>
+	const handleCreateTool = () => {
+		if (!toolForm.name || !toolForm.url || !toolForm.category_id) return;
+		createTool.mutate(toolForm);
+	};
 
-              {/* Tools List */}
-              <div className="space-y-3">
-                {tools.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <p className="font-light">No tools yet</p>
-                  </div>
-                ) : (
-                  tools.map((tool) => {
-                    const category = categories.find((c) => c.id === tool.category_id);
-                    return (
-                      <div
-                        key={tool.id}
-                        className="flex items-center gap-4 p-5 bg-white border border-gray-200 hover:border-[#F64668] transition-all"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-1">
-                            <span className="font-normal text-[#41436A]">{tool.name}</span>
-                            {tool.icon_name && (
-                              <span className="px-2 py-0.5 bg-[#FE9677]/20 text-[#984063] text-xs font-light">
-                                {tool.icon_name}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-500 font-light">
-                            <span>{category?.name || "No category"}</span>
-                            <a
-                              href={tool.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-[#F64668] transition-colors truncate"
-                            >
-                              {tool.url}
-                            </a>
-                          </div>
-                        </div>
-                        <span className="text-sm text-gray-500 font-light">
-                          Order: {tool.order}
-                        </span>
-                        <button
-                          onClick={() => {
-                            if (confirm("Delete this tool?")) {
-                              deleteToolMutation.mutate(tool.id);
-                            }
-                          }}
-                          className="px-3 py-2 border border-gray-300 text-[#F64668] hover:bg-gray-50 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
+	return (
+		<motion.div
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			exit={{ opacity: 0 }}
+			className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+			onClick={onClose}
+		>
+			<motion.div
+				initial={{ scale: 0.98 }}
+				animate={{ scale: 1 }}
+				className="bg-background w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col rounded-lg"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<div className="flex items-center justify-between p-6 bg-[#41436A] text-white">
+					<div>
+						<h3 className="text-lg font-medium">Manage Tools & Categories</h3>
+						<p className="text-sm text-white/80">Create, edit, and delete categories and tools</p>
+					</div>
+					<button onClick={onClose} className="p-2">
+						<X className="w-5 h-5" />
+					</button>
+				</div>
+
+				<div className="p-6 overflow-auto flex-1">
+					<Tabs defaultValue="categories" className="w-full">
+						<TabsList className="grid grid-cols-2 gap-2 mb-6 bg-gray-100 p-1 rounded">
+							<TabsTrigger value="categories">Categories</TabsTrigger>
+							<TabsTrigger value="tools">Tools</TabsTrigger>
+						</TabsList>
+
+						<TabsContent value="categories" className="space-y-6">
+							{/* Create Category */}
+							<div className="bg-white p-4 border rounded">
+								<div className="grid grid-cols-1 gap-3">
+									<div>
+										<Label htmlFor="cat-name">Name</Label>
+											<Input id="cat-name" value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} />
+											{categoryError && <div className="text-sm text-red-500 mt-1">{categoryError}</div>}
+									</div>
+									<div>
+										<Label htmlFor="cat-desc">Description</Label>
+										<Input id="cat-desc" value={categoryForm.description} onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })} />
+									</div>
+									<div className="flex justify-end">
+										<Button onClick={handleCreateCategory} className="bg-[#984063] text-white" disabled={createCategory.isLoading}>
+											<Plus className="w-4 h-4 mr-2" /> {createCategory.isLoading ? 'Saving...' : 'Add Category'}
+										</Button>
+									</div>
+								</div>
+							</div>
+
+							{/* Categories List */}
+							<div className="space-y-3">
+								{categories.length === 0 ? (
+									<div className="text-center py-8 text-gray-500">No categories yet</div>
+								) : (
+									categories.map((cat) => (
+										<div key={cat._id} className="bg-white border p-3 rounded flex items-center gap-3">
+											<div className="flex-1">
+																				{editingCategoryId === cat._id ? (
+																					<div className="space-y-2">
+																						<Input
+																							value={editCategoryValues[cat._id]?.name ?? ""}
+																							onChange={(e) => setEditCategoryValues((s) => ({ ...s, [cat._id]: { ...(s[cat._id] || {}), name: e.target.value } }))}
+																						/>
+																						<Input
+																							value={editCategoryValues[cat._id]?.description ?? ""}
+																							onChange={(e) => setEditCategoryValues((s) => ({ ...s, [cat._id]: { ...(s[cat._id] || {}), description: e.target.value } }))}
+																						/>
+																					</div>
+																				) : (
+													<div>
+														<div className="font-medium">{cat.name}</div>
+														{cat.description && <div className="text-sm text-gray-500">{cat.description}</div>}
+													</div>
+												)}
+											</div>
+
+											<div className="flex items-center gap-2">
+																{editingCategoryId === cat._id ? (
+																	<>
+																		<Button
+																			onClick={() => {
+																				const payload = {
+																					name: editCategoryValues[cat._id]?.name ?? cat.name,
+																					description: editCategoryValues[cat._id]?.description ?? cat.description,
+																				};
+																				updateCategory.mutate({ id: cat._id, data: payload });
+																			}}
+																		>
+																			<Save className="w-4 h-4" />
+																		</Button>
+																		<Button
+																			variant="outline"
+																			onClick={() => {
+																				setEditingCategoryId(null);
+																				setEditCategoryValues((s) => {
+																					const copy = { ...s };
+																					delete copy[cat._id];
+																					return copy;
+																				});
+																			}}
+																		>
+																			Cancel
+																		</Button>
+																	</>
+																) : (
+																	<>
+																																				<Button
+																																					onClick={() => {
+																																						// Initialize edit buffer from current values
+																																						setEditCategoryValues((s) => ({ ...s, [cat._id]: { name: cat.name, description: cat.description } }));
+																																						setEditingCategoryId(cat._id);
+																																					}}
+																																				>
+																																					<Edit2 className="w-4 h-4" />
+																																				</Button>
+																		<Button onClick={() => { if (confirm('Delete this category?')) deleteCategory.mutate(cat._id); }}>
+																			<Trash2 className="w-4 h-4 text-[#F64668]" />
+																		</Button>
+																	</>
+																)}
+											</div>
+										</div>
+									))
+								)}
+							</div>
+						</TabsContent>
+
+						<TabsContent value="tools" className="space-y-6">
+							{/* Create Tool */}
+							<div className="bg-white p-4 border rounded">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div>
+										<Label>Category</Label>
+										<select value={toolForm.category_id} onChange={(e) => setToolForm({ ...toolForm, category_id: e.target.value })} className="w-full border p-2">
+											<option value="">Select category</option>
+											{categories.map((c) => (<option key={c._id} value={c._id}>{c.name}</option>))}
+										</select>
+									</div>
+									<div>
+										<Label>Name</Label>
+										<Input value={toolForm.name} onChange={(e) => setToolForm({ ...toolForm, name: e.target.value })} />
+									</div>
+									<div>
+										<Label>Icon name</Label>
+										<Input value={toolForm.icon_name} onChange={(e) => setToolForm({ ...toolForm, icon_name: e.target.value })} />
+									</div>
+									<div>
+										<Label>URL</Label>
+										<Input value={toolForm.url} onChange={(e) => setToolForm({ ...toolForm, url: e.target.value })} />
+									</div>
+									<div className="md:col-span-2">
+										<Label>Description</Label>
+										<Input value={toolForm.description} onChange={(e) => setToolForm({ ...toolForm, description: e.target.value })} />
+									</div>
+									<div className="flex justify-end md:col-span-2">
+										<Button onClick={handleCreateTool} className="bg-[#984063] text-white" disabled={createTool.isLoading}><Plus className="w-4 h-4 mr-2"/>{createTool.isLoading ? 'Saving...' : 'Add Tool'}</Button>
+									</div>
+								</div>
+							</div>
+
+							{/* Tools List */}
+							<div className="space-y-3">
+								{tools.length === 0 ? (
+									<div className="text-center py-8 text-gray-500">No tools yet</div>
+								) : (
+									tools
+										.filter(tool => {
+											if (!toolForm.category_id) return true; // Show all tools if no category selected
+											const toolCategoryId = tool.category_id?._id || tool.category_id;
+											return toolCategoryId === toolForm.category_id;
+										})
+										.map((tool) => (
+										<div key={tool._id} className="bg-white border p-3 rounded flex items-center gap-3">
+											<div className="flex-1 min-w-0">
+												{editingToolId === tool._id ? (
+													<div className="grid grid-cols-1 gap-2">
+														<Input
+															value={editToolValues[tool._id]?.name ?? ''}
+															onChange={(e) => setEditToolValues((s) => ({ ...s, [tool._id]: { ...(s[tool._id] || {}), name: e.target.value } }))}
+														/>
+														<Input
+															value={editToolValues[tool._id]?.url ?? ''}
+															onChange={(e) => setEditToolValues((s) => ({ ...s, [tool._id]: { ...(s[tool._id] || {}), url: e.target.value } }))}
+														/>
+													</div>
+												) : (
+													<div>
+														<div className="font-medium truncate">{tool.name}</div>
+														<div className="text-sm text-gray-500 truncate">{tool.url}</div>
+													</div>
+												)}
+											</div>
+
+											<div className="flex items-center gap-2">
+												{editingToolId === tool._id ? (
+													<>
+														<Button onClick={() => {
+															const payload = {
+																name: editToolValues[tool._id]?.name ?? tool.name,
+																url: editToolValues[tool._id]?.url ?? tool.url,
+															};
+															updateTool.mutate({ id: tool._id, data: payload });
+														}}>
+															<Save className="w-4 h-4" />
+														</Button>
+														<Button variant="outline" onClick={() => {
+															setEditingToolId(null);
+															setEditToolValues((s) => { const copy = { ...s }; delete copy[tool._id]; return copy; });
+														}}>Cancel</Button>
+													</>
+												) : (
+													<>
+														<Button onClick={() => {
+															setEditToolValues((s) => ({ ...s, [tool._id]: { name: tool.name, url: tool.url } }));
+															setEditingToolId(tool._id);
+														}}>
+															<Edit2 className="w-4 h-4" />
+														</Button>
+														<Button onClick={() => { if (confirm('Delete this tool?')) deleteTool.mutate(tool._id); }}>
+															<Trash2 className="w-4 h-4 text-[#F64668]" />
+														</Button>
+													</>
+												)}
+											</div>
+										</div>
+									))
+								)}
+							</div>
+						</TabsContent>
+					</Tabs>
+				</div>
+			</motion.div>
+		</motion.div>
+	);
 }

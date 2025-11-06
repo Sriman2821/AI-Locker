@@ -25,8 +25,8 @@ const materialSchema = new mongoose.Schema({
 
 const toolCategorySchema = new mongoose.Schema({
   name: { type: String, required: true },
-  order: { type: Number, default: 0 },
-  is_visible: { type: Boolean, default: true }
+  is_visible: { type: Boolean, default: true },
+  description: String
 }, { timestamps: true });
 
 const toolSchema = new mongoose.Schema({
@@ -34,7 +34,7 @@ const toolSchema = new mongoose.Schema({
   name: { type: String, required: true },
   icon_name: String,
   url: { type: String, required: true },
-  order: { type: Number, default: 0 }
+  description: String
 }, { timestamps: true });
 
 const sourceCodeSchema = new mongoose.Schema({

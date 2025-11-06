@@ -8,18 +8,31 @@ dotenv.config();
 
 const app = express();
 
-// Configure CORS for production
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  credentials: true,
-  optionsSuccessStatus: 200
-};
+// Configure CORS. In development we reflect the request origin to avoid
+// mismatches when Vite auto-changes the client port. In production we
+// restrict to the configured CORS_ORIGIN.
+let corsOptions;
+if (process.env.NODE_ENV === 'development') {
+  corsOptions = {
+    origin: true, // reflect request origin
+    credentials: true,
+    optionsSuccessStatus: 200,
+  };
+  console.log('CORS: development mode - reflecting request origin');
+} else {
+  corsOptions = {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    credentials: true,
+    optionsSuccessStatus: 200,
+  };
+  console.log('CORS: production mode - allowed origin:', corsOptions.origin);
+}
 
 app.use(cors(corsOptions));
 app.use(express.json());
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
@@ -64,7 +77,118 @@ app.post('/api/materials', async (req, res) => {
   }
 });
 
-// Add other routes for Tools, ToolCategories, SourceCode, and Users...
+// Tool Category Routes
+app.get('/api/tool-categories', async (req, res) => {
+  try {
+    const categories = await ToolCategory.find({ is_visible: true })
+      .collation({ locale: 'en' })
+      .sort({ name: 1 });
+    res.json(categories);
+  } catch (error) {
+    console.error('Error fetching tool categories:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/tool-categories', async (req, res) => {
+  try {
+    const category = new ToolCategory(req.body);
+    await category.save();
+    res.status(201).json(category);
+  } catch (error) {
+    console.error('Error creating tool category:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.put('/api/tool-categories/:id', async (req, res) => {
+  try {
+    const category = await ToolCategory.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    res.json(category);
+  } catch (error) {
+    console.error('Error updating tool category:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.delete('/api/tool-categories/:id', async (req, res) => {
+  try {
+    const category = await ToolCategory.findByIdAndDelete(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    // Delete all tools in this category
+    await Tool.deleteMany({ category_id: req.params.id });
+    res.json({ message: 'Category and associated tools deleted' });
+  } catch (error) {
+    console.error('Error deleting tool category:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Tool Routes
+app.get('/api/tools', async (req, res) => {
+  try {
+    const query = req.query.categoryId ? { category_id: req.query.categoryId } : {};
+    const tools = await Tool.find(query)
+      .populate('category_id')
+      .collation({ locale: 'en' })
+      .sort({ name: 1 });
+    res.json(tools);
+  } catch (error) {
+    console.error('Error fetching tools:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/tools', async (req, res) => {
+  try {
+    const tool = new Tool(req.body);
+    await tool.save();
+    const populatedTool = await Tool.findById(tool._id).populate('category_id');
+    res.status(201).json(populatedTool);
+  } catch (error) {
+    console.error('Error creating tool:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.put('/api/tools/:id', async (req, res) => {
+  try {
+    const tool = await Tool.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    ).populate('category_id');
+    if (!tool) {
+      return res.status(404).json({ message: 'Tool not found' });
+    }
+    res.json(tool);
+  } catch (error) {
+    console.error('Error updating tool:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.delete('/api/tools/:id', async (req, res) => {
+  try {
+    const tool = await Tool.findByIdAndDelete(req.params.id);
+    if (!tool) {
+      return res.status(404).json({ message: 'Tool not found' });
+    }
+    res.json({ message: 'Tool deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting tool:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
