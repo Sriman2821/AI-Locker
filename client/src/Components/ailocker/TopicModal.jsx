@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/productionClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { Textarea } from "@/Components/ui/textarea";
+import { Label } from "@/Components/ui/label";
 
 export default function TopicModal({ topic, onClose }) {
   const [formData, setFormData] = useState({
@@ -69,7 +69,7 @@ export default function TopicModal({ topic, onClose }) {
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Topic title"
               required
-              className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+              className="mt-2 border-gray-300 rounded-none"
             />
           </div>
 
@@ -83,7 +83,7 @@ export default function TopicModal({ topic, onClose }) {
               }
               placeholder="Topic description"
               rows={4}
-              className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+              className="mt-2 border-gray-300 rounded-none"
             />
           </div>
 

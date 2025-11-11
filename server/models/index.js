@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { User } from './user.js';
 
 const topicSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -15,8 +16,21 @@ const materialSchema = new mongoose.Schema({
     enum: ['link', 'file', 'image', 'video', 'doc', 'sheet', 'slide'],
     required: true 
   },
+  // legacy single url (kept for compatibility) and new links array
   url: String,
-  file_url: String,
+  links: [{
+    url: String,
+    name: String
+  }],
+  files: [{
+    url: String,
+    name: String,
+    type: {
+      type: String,
+      enum: ['link', 'file', 'image', 'video', 'doc', 'sheet', 'slide'],
+      default: 'file'
+    }
+  }],
   assigned_user: String,
   session_number: Number,
   date_presented: Date,
@@ -49,15 +63,17 @@ const sourceCodeSchema = new mongoose.Schema({
   tags: [String]
 }, { timestamps: true });
 
-const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  full_name: String,
-  role: { type: String, default: 'user' }
-}, { timestamps: true });
+const Topic = mongoose.models.Topic || mongoose.model('Topic', topicSchema);
+const Material = mongoose.models.Material || mongoose.model('Material', materialSchema);
+const ToolCategory = mongoose.models.ToolCategory || mongoose.model('ToolCategory', toolCategorySchema);
+const Tool = mongoose.models.Tool || mongoose.model('Tool', toolSchema);
+const SourceCode = mongoose.models.SourceCode || mongoose.model('SourceCode', sourceCodeSchema);
 
-export const Topic = mongoose.model('Topic', topicSchema);
-export const Material = mongoose.model('Material', materialSchema);
-export const ToolCategory = mongoose.model('ToolCategory', toolCategorySchema);
-export const Tool = mongoose.model('Tool', toolSchema);
-export const SourceCode = mongoose.model('SourceCode', sourceCodeSchema);
-export const User = mongoose.model('User', userSchema);
+export {
+  User,
+  Topic,
+  Material,
+  ToolCategory,
+  Tool,
+  SourceCode
+};

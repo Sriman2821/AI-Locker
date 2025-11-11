@@ -1,34 +1,44 @@
-import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { useEffect, useRef, useState } from "react";
+import { base44 } from "@/api/productionClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Image as ImageIcon, Video, FileText, FileSpreadsheet, Presentation } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { Textarea } from "@/Components/ui/textarea";
+import { Label } from "@/Components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/Components/ui/select";
+import ConfirmModal from "@/Components/ui/ConfirmModal";
 
 export default function MaterialModal({ material, topicId, onClose }) {
   const [formData, setFormData] = useState({
     topic_id: material?.topic_id || topicId,
     title: material?.title || "",
     description: material?.description || "",
-    type: material?.type || "link",
-    url: material?.url || "",
-    file_url: material?.file_url || "",
+    type: material?.type || (material?.files?.length ? "file" : "link"),
+    // legacy single fields retained but not used in UI
+    url: "",
+    file_url: "",
+    file_name: "",
+    // new multi-fields
+    links: material?.links?.length ? material.links : (material?.url ? [{ url: material.url, name: material.url }] : []),
+    files: material?.files?.length ? material.files : (material?.file_url ? [{ url: material.file_url, name: material.file_name || "File", type: "file" }] : []),
     assigned_user: material?.assigned_user || "",
     session_number: material?.session_number || "",
     date_presented: material?.date_presented || "",
     order: material?.order || 0,
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const initialSnapshotRef = useRef(null);
 
   const queryClient = useQueryClient();
 
@@ -38,28 +48,190 @@ export default function MaterialModal({ material, topicId, onClose }) {
         ? base44.entities.Material.update(material.id, data)
         : base44.entities.Material.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["materials"]);
+      queryClient.invalidateQueries({ queryKey: ["materials", topicId] });
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
       onClose();
     },
   });
 
+  // Capture initial snapshot once
+  useEffect(() => {
+    if (initialSnapshotRef.current == null) {
+      initialSnapshotRef.current = JSON.stringify({
+        title: material?.title || "",
+        description: material?.description || "",
+        assigned_user: material?.assigned_user || "",
+        session_number: material?.session_number || "",
+        date_presented: material?.date_presented || "",
+        links: (material?.links || (material?.url ? [{ url: material.url, name: material.url }] : [])).map(l => ({ url: l.url || "", name: l.name || "" })),
+        files: (material?.files || (material?.file_url ? [{ url: material.file_url, name: material.file_name || "File", type: "" }] : [])).map(f => ({ url: f.url || "", name: f.name || "", type: f.type || "" })),
+      });
+    }
+  }, [material]);
+
+  // Track dirty state whenever form data changes
+  useEffect(() => {
+    const current = JSON.stringify({
+      title: formData.title,
+      description: formData.description,
+      assigned_user: formData.assigned_user,
+      session_number: formData.session_number,
+      date_presented: formData.date_presented,
+      links: (formData.links || []).map(l => ({ url: l.url || "", name: l.name || "" })),
+      files: (formData.files || []).map(f => ({ url: f.url || "", name: f.name || "", type: f.type || "" })),
+    });
+    setIsDirty(initialSnapshotRef.current !== current);
+  }, [formData]);
+
+  const buildPayload = () => {
+    const normalizedType = (formData.files?.length ? "file" : (formData.links?.length ? "link" : formData.type || "link"));
+    return {
+      topic_id: formData.topic_id,
+      title: formData.title,
+      description: formData.description,
+      type: normalizedType,
+      url: "",
+      file_url: "",
+      assigned_user: formData.assigned_user,
+      session_number: formData.session_number,
+      date_presented: formData.date_presented,
+      order: formData.order,
+      links: (formData.links || []).filter(l => l && l.url),
+      files: (formData.files || []).filter(f => f && f.url),
+    };
+  };
+
+  const requestCloseModal = () => {
+    if (isDirty) {
+      setConfirmAction({
+        type: "save-and-exit",
+        title: "Unsaved changes",
+        description: "You have unsaved changes. Save and exit?",
+      });
+      return;
+    }
+    onClose();
+  };
+
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const maxSizeMb = 10;
+    const tooLarge = files.find(f => f.size > maxSizeMb * 1024 * 1024);
+    if (tooLarge) {
+      alert(`One or more files exceed the ${maxSizeMb}MB limit.`);
+      return;
+    }
 
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFormData({ ...formData, file_url, url: "" });
+      // Use production upload endpoint to send multiple files
+      const uploadedResponse = await base44.integrations.Core.UploadFiles({ files });
+      const uploaded = (Array.isArray(uploadedResponse) ? uploadedResponse : []).map((u, i) => ({
+        url: u.file_url,
+        name: u.file_name || files[i]?.name || "File",
+        type: "",
+      }));
+      setFormData((prev) => ({
+        ...prev,
+        files: [...(prev.files || []), ...uploaded],
+        type: "file",
+      }));
+      setUploadedFileName(uploaded.map(u => u.name).join(", "));
     } catch (error) {
-      alert("Failed to upload file");
+      alert(error?.message || "Failed to upload file(s)");
     }
     setUploading(false);
+    // reset input value to allow re-uploading the same file names
+    e.target.value = "";
+  };
+
+  const handleRemoveUploadedFile = (index) => {
+    setFormData((prev) => {
+      const next = [...(prev.files || [])];
+      next.splice(index, 1);
+      return { ...prev, files: next, type: next.length ? "file" : (prev.links?.length ? "link" : prev.type) };
+    });
+  };
+
+  const requestRemoveUploadedFile = (index) => {
+    setConfirmAction({
+      type: "remove-file",
+      index,
+      title: "Remove file",
+      description: "Are you sure you want to remove this file from the material?",
+    });
+  };
+
+  const addEmptyLink = () => {
+    setFormData((prev) => ({
+      ...prev,
+      links: [...(prev.links || []), { url: "" }],
+      type: prev.files?.length ? "file" : "link",
+    }));
+  };
+
+  const updateLink = (index, key, value) => {
+    setFormData((prev) => {
+      const next = [...(prev.links || [])];
+      next[index] = { ...next[index], [key]: value };
+      return { ...prev, links: next };
+    });
+  };
+
+  const removeLink = (index) => {
+    setFormData((prev) => {
+      const next = [...(prev.links || [])];
+      next.splice(index, 1);
+      return { ...prev, links: next, type: prev.files?.length ? "file" : (next.length ? "link" : prev.type) };
+    });
+  };
+
+  const requestRemoveLink = (index) => {
+    setConfirmAction({
+      type: "remove-link",
+      index,
+      title: "Remove link",
+      description: "Are you sure you want to remove this link from the material?",
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    mutation.mutate(formData);
+    // Require type selection for each uploaded file
+    const untypedFile = (formData.files || []).find(f => !f.type);
+    if (untypedFile) {
+      alert("Please choose a file type for each uploaded file.");
+      return;
+    }
+    const payload = buildPayload();
+    mutation.mutate(payload);
+  };
+
+  const getFileTypeIcon = (fileType) => {
+    switch (fileType) {
+      case "image":
+        return ImageIcon;
+      case "video":
+        return Video;
+      case "sheet":
+        return FileSpreadsheet;
+      case "slide":
+        return Presentation;
+      case "doc":
+      case "file":
+      default:
+        return FileText;
+    }
+  };
+
+  const updateFileType = (index, newType) => {
+    setFormData((prev) => {
+      const next = [...(prev.files || [])];
+      next[index] = { ...(next[index] || {}), type: newType || "file" };
+      return { ...prev, files: next };
+    });
   };
 
   return (
@@ -68,7 +240,18 @@ export default function MaterialModal({ material, topicId, onClose }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (isDirty) {
+          setConfirmAction({
+            type: "save-and-exit",
+            title: "Unsaved changes",
+            description: "You have unsaved changes. Save and exit?",
+          });
+        } else {
+          onClose();
+        }
+      }}
     >
       <motion.div
         initial={{ scale: 0.95 }}
@@ -82,7 +265,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
             {material ? "Edit Material" : "Add Material"}
           </h2>
           <button
-            onClick={onClose}
+            onClick={requestCloseModal}
             className="p-2 hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5 text-white" strokeWidth={1.5} />
@@ -117,36 +300,17 @@ export default function MaterialModal({ material, topicId, onClose }) {
               />
             </div>
 
-            <div>
-              <Label htmlFor="type" className="text-sm font-light text-[#41436A]">Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-              >
-                <SelectTrigger className="mt-2 border-gray-300 rounded-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="link">Link</SelectItem>
-                  <SelectItem value="file">File</SelectItem>
-                  <SelectItem value="image">Image</SelectItem>
-                  <SelectItem value="video">Video</SelectItem>
-                  <SelectItem value="doc">Document</SelectItem>
-                  <SelectItem value="sheet">Spreadsheet</SelectItem>
-                  <SelectItem value="slide">Presentation</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            
 
             <div>
-              <Label htmlFor="assigned_user" className="text-sm font-light text-[#41436A]">Assigned User</Label>
+              <Label htmlFor="assigned_user" className="text-sm font-light text-[#41436A]">Content Owner</Label>
               <Input
                 id="assigned_user"
                 value={formData.assigned_user}
                 onChange={(e) =>
                   setFormData({ ...formData, assigned_user: e.target.value })
                 }
-                placeholder="User name"
+                placeholder="Owner name"
                 className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
               />
             </div>
@@ -179,45 +343,149 @@ export default function MaterialModal({ material, topicId, onClose }) {
             </div>
 
             <div className="col-span-2">
-              <Label htmlFor="url" className="text-sm font-light text-[#41436A]">URL</Label>
-              <Input
-                id="url"
-                type="url"
-                value={formData.url}
-                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                placeholder="https://example.com"
-                className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
-                disabled={!!formData.file_url}
-              />
+              <Label className="text-sm font-light text-[#41436A]">Links</Label>
+              <div className="mt-2 space-y-2">
+                {(formData.links || []).map((lnk, idx) => (
+                  <div key={idx} className="grid grid-cols-5 gap-2 items-center">
+                    <Input
+                      placeholder="https://example.com"
+                      type="url"
+                      value={lnk.url || ""}
+                      onChange={(e) => updateLink(idx, "url", e.target.value)}
+                      className="col-span-4 border-gray-300 rounded-none focus:border-[#F64668]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => requestRemoveLink(idx)}
+                      className="text-xs text-[#F64668] hover:text-[#984063] justify-self-start"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addEmptyLink}
+                  className="px-3 py-1 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs font-light"
+                >
+                  Add link
+                </button>
+              </div>
             </div>
 
             <div className="col-span-2">
-              <Label className="text-sm font-light text-[#41436A]">Or Upload File</Label>
+              <Label className="text-sm font-light text-[#41436A]">Upload Files</Label>
               <div className="mt-2">
                 <label className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 hover:border-[#F64668] cursor-pointer transition-colors">
                   <Upload className="w-4 h-4 text-[#984063]" strokeWidth={1.5} />
                   <span className="text-sm text-[#41436A] font-light">
-                    {uploading
-                      ? "Uploading..."
-                      : formData.file_url
-                      ? "File uploaded"
-                      : "Choose file"}
+                    {uploading ? "Uploading..." : "Choose file(s)"}
+                    {uploadedFileName ? `: ${uploadedFileName}` : ""}
                   </span>
                   <input
                     type="file"
+                    multiple
                     onChange={handleFileUpload}
                     className="hidden"
                     disabled={uploading}
                   />
                 </label>
+                {(formData.files?.length > 0) && (
+                  <div className="mt-2 border border-dashed border-gray-300">
+                    {formData.files.map((f, idx) => {
+                      const Icon = getFileTypeIcon(f.type || "file");
+                      return (
+                        <div key={idx} className="grid grid-cols-12 gap-3 items-center px-4 py-2 bg-gray-50 border-b last:border-b-0">
+                          <div className="col-span-6 flex items-center gap-2 min-w-0">
+                            <Icon className="w-4 h-4 text-[#984063] shrink-0" strokeWidth={1.5} />
+                            <span className="text-xs text-[#41436A] font-light truncate">
+                              {f.name || `File ${idx + 1}`}
+                            </span>
+                          </div>
+                          <div className="col-span-4">
+                            <Label className="sr-only">Type</Label>
+                            <Select
+                              value={f.type || undefined}
+                              onValueChange={(value) => updateFileType(idx, value)}
+                            >
+                              <SelectTrigger className="border-gray-300 rounded-none h-8">
+                                <SelectValue placeholder="File type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="image">
+                                  <div className="flex items-center gap-2">
+                                    <ImageIcon className="w-3 h-3" strokeWidth={1.5} />
+                                    <span>Image</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="video">
+                                  <div className="flex items-center gap-2">
+                                    <Video className="w-3 h-3" strokeWidth={1.5} />
+                                    <span>Video</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="doc">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="w-3 h-3" strokeWidth={1.5} />
+                                    <span>Document</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="sheet">
+                                  <div className="flex items-center gap-2">
+                                    <FileSpreadsheet className="w-3 h-3" strokeWidth={1.5} />
+                                    <span>Spreadsheet</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="slide">
+                                  <div className="flex items-center gap-2">
+                                    <Presentation className="w-3 h-3" strokeWidth={1.5} />
+                                    <span>Presentation</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="col-span-2 flex justify-end">
+                            <button
+                              type="button"
+                          onClick={() => requestRemoveUploadedFile(idx)}
+                              className="text-xs text-[#F64668] hover:text-[#984063]"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
+          <ConfirmModal
+            open={!!confirmAction}
+            title={confirmAction?.title}
+            description={confirmAction?.description}
+            confirmLabel={confirmAction?.type === "save-and-exit" ? "Save & Exit" : "Remove"}
+            cancelLabel="Cancel"
+            onClose={() => setConfirmAction(null)}
+            onConfirm={() => {
+              if (confirmAction?.type === "remove-link") {
+                removeLink(confirmAction.index);
+              } else if (confirmAction?.type === "remove-file") {
+                handleRemoveUploadedFile(confirmAction.index);
+              } else if (confirmAction?.type === "save-and-exit") {
+                const payload = buildPayload();
+                mutation.mutate(payload);
+              }
+              setConfirmAction(null);
+            }}
+          />
 
           <div className="flex gap-3 justify-end pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestCloseModal}
               className="px-5 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-sm font-light"
             >
               Cancel

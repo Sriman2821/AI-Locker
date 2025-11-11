@@ -1,26 +1,71 @@
-import { useMemo } from "react";
-import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { Github, Gitlab, ExternalLink } from "lucide-react";
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useMemo, useState } from "react";
+import { Input } from "@/Components/ui/input";
+import { Search } from "lucide-react";
+import { base44 } from "@/api/productionClient";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Github, Gitlab, ExternalLink, Edit2, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Badge } from "@/Components/ui/badge";
+import AddSourceCodeModal from "./AddSourceCodeModal";
+import ConfirmModal from "@/Components/ui/ConfirmModal";
 
-export default function SourceCodeTab({ isAdmin, searchQuery }) {
+export default function SourceCodeTab({ isAdmin }) {
+  const [editingRepo, setEditingRepo] = useState(null);
+  const [search, setSearch] = useState("");
+  const [confirmRepoDelete, setConfirmRepoDelete] = useState(null);
+  const [caps, setCaps] = useState({ add: !!isAdmin, edit: !!isAdmin, delete: !!isAdmin });
+  const queryClient = useQueryClient();
   const { data: repos = [] } = useQuery({
     queryKey: ["sourcecode"],
     queryFn: () => base44.entities.SourceCode.list("-created_date"),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.SourceCode.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["sourcecode"]);
+    },
+  });
+
   const filteredRepos = useMemo(() => {
-    if (!searchQuery) return repos;
-    const query = searchQuery.toLowerCase();
+    if (!search) return repos;
+    const query = search.toLowerCase();
     return repos.filter(
       (repo) =>
         repo.name.toLowerCase().includes(query) ||
         repo.description?.toLowerCase().includes(query) ||
         repo.tags?.some((tag) => tag.toLowerCase().includes(query))
     );
-  }, [repos, searchQuery]);
+  }, [repos, search]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!isAdmin) {
+        if (!cancelled) setCaps({ add: false, edit: false, delete: false });
+        return;
+      }
+      try {
+        const me = await base44.auth.me();
+        const perms = me?.permissions?.sourcecode;
+        if (!cancelled) {
+          if (perms && typeof perms === 'object') {
+            setCaps({
+              add: !!perms.add,
+              edit: !!perms.edit,
+              delete: !!perms.delete,
+            });
+          } else {
+            setCaps({ add: true, edit: true, delete: true });
+          }
+        }
+      } catch {
+        if (!cancelled) setCaps({ add: !!isAdmin, edit: !!isAdmin, delete: !!isAdmin });
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [isAdmin]);
 
   const getPlatformIcon = (platform) => {
     switch (platform) {
@@ -36,10 +81,30 @@ export default function SourceCodeTab({ isAdmin, searchQuery }) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex-shrink-0 bg-white border-b border-gray-200 p-12">
-        <h2 className="text-3xl font-light text-[#41436A] mb-2">Source Code</h2>
-        <p className="text-gray-500 font-light">
-          Repositories and source code links
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-light text-[#41436A] mb-2">Source Code</h2>
+            <p className="text-gray-500 font-light">Repositories and source code links</p>
+          </div>
+
+          <div className="w-64">
+            <div className="flex items-center gap-2">
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search repositories..."
+                className="border-gray-300 rounded-none"
+              />
+              <button
+                onClick={() => { /* noop - filtering is live */ }}
+                className="px-3 py-2 bg-[#41436A] text-white rounded"
+                title="Search repos"
+              >
+                <Search className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-12">
@@ -67,7 +132,7 @@ export default function SourceCodeTab({ isAdmin, searchQuery }) {
                     rel="noopener noreferrer"
                     className="block h-full group"
                   >
-                    <div className="h-full bg-white border border-gray-200 overflow-hidden hover:border-[#F64668] transition-all">
+                    <div className="h-full bg-white border border-gray-200 overflow-hidden hover:border-[#F64668] transition-all relative">
                       <div className="bg-[#41436A] p-6 border-b border-[#41436A]/20 flex items-center gap-3">
                         <Icon className="w-5 h-5 text-[#FE9677]" strokeWidth={1.5} />
                         <div className="flex-1 min-w-0">
@@ -100,7 +165,42 @@ export default function SourceCodeTab({ isAdmin, searchQuery }) {
                             ))}
                           </div>
                         )}
+
+                        {isAdmin && (caps.edit || caps.delete) && (
+                          <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
+                            {caps.edit && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setEditingRepo(repo);
+                                }}
+                                className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs font-light"
+                                title="Edit repository"
+                              >
+                                <Edit2 className="w-3 h-3" strokeWidth={1.5} />
+                              </button>
+                            )}
+                            {caps.delete && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (deleteMutation.isPending) return;
+                                  setConfirmRepoDelete(repo);
+                                }}
+                                className="px-3 py-2 border border-gray-300 text-[#F64668] hover:bg-gray-50 transition-colors text-xs font-light"
+                                title="Delete repository"
+                              >
+                                <Trash2 className="w-3 h-3" strokeWidth={1.5} />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
+
                     </div>
                   </a>
                 </motion.div>
@@ -109,6 +209,30 @@ export default function SourceCodeTab({ isAdmin, searchQuery }) {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!confirmRepoDelete}
+        title="Delete repository"
+        description="Are you sure you want to delete this repository? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onClose={() => setConfirmRepoDelete(null)}
+        onConfirm={() => {
+          if (confirmRepoDelete) {
+            deleteMutation.mutate(confirmRepoDelete.id || confirmRepoDelete._id || confirmRepoDelete.id);
+          }
+          setConfirmRepoDelete(null);
+        }}
+      />
+
+      <AnimatePresence>
+        {editingRepo && (
+          <AddSourceCodeModal
+            repo={editingRepo}
+            onClose={() => setEditingRepo(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
