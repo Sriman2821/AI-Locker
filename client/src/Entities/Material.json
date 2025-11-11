@@ -1,0 +1,62 @@
+{
+  "name": "Material",
+  "type": "object",
+  "properties": {
+    "topic_id": {
+      "type": "string",
+      "description": "Reference to topic"
+    },
+    "title": {
+      "type": "string",
+      "description": "Material title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Material description"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "link",
+        "file",
+        "image",
+        "video",
+        "doc",
+        "sheet",
+        "slide"
+      ],
+      "description": "Type of material"
+    },
+    "url": {
+      "type": "string",
+      "description": "External URL for links"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "Uploaded file URL"
+    },
+    "assigned_user": {
+      "type": "string",
+      "description": "User who presented this"
+    },
+    "session_number": {
+      "type": "number",
+      "description": "Session number"
+    },
+    "date_presented": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when presented"
+    },
+    "order": {
+      "type": "number",
+      "description": "Display order within topic",
+      "default": 0
+    }
+  },
+  "required": [
+    "topic_id",
+    "title",
+    "type"
+  ]
+}

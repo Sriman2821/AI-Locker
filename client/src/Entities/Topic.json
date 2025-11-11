@@ -1,0 +1,22 @@
+{
+  "name": "Topic",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Topic title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Topic description"
+    },
+    "order": {
+      "type": "number",
+      "description": "Display order",
+      "default": 0
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

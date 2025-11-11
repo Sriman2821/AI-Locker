@@ -1,0 +1,23 @@
+{
+  "name": "ToolCategory",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Category name"
+    },
+    "order": {
+      "type": "number",
+      "description": "Display order",
+      "default": 0
+    },
+    "is_visible": {
+      "type": "boolean",
+      "description": "Whether category is visible",
+      "default": true
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

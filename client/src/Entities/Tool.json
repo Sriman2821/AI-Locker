@@ -1,0 +1,32 @@
+{
+  "name": "Tool",
+  "type": "object",
+  "properties": {
+    "category_id": {
+      "type": "string",
+      "description": "Reference to category"
+    },
+    "name": {
+      "type": "string",
+      "description": "Tool name"
+    },
+    "icon_name": {
+      "type": "string",
+      "description": "Lucide icon name (e.g., 'Wrench', 'Code')"
+    },
+    "url": {
+      "type": "string",
+      "description": "Tool URL"
+    },
+    "order": {
+      "type": "number",
+      "description": "Display order within category",
+      "default": 0
+    }
+  },
+  "required": [
+    "category_id",
+    "name",
+    "url"
+  ]
+}
