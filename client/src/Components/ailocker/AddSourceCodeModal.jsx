@@ -1,27 +1,27 @@
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/productionClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { Textarea } from "@/Components/ui/textarea";
+import { Label } from "@/Components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/Components/ui/select";
 
-export default function AddSourceCodeModal({ onClose }) {
+export default function AddSourceCodeModal({ onClose, repo = null }) {
   const [formData, setFormData] = useState({
-    name: "",
-    platform: "github",
-    url: "",
-    description: "",
-    tags: "",
+    name: repo?.name || "",
+    platform: repo?.platform || "github",
+    url: repo?.url || "",
+    description: repo?.description || "",
+    tags: Array.isArray(repo?.tags) ? repo.tags.join(", ") : "",
   });
 
   const queryClient = useQueryClient();
@@ -35,7 +35,9 @@ export default function AddSourceCodeModal({ onClose }) {
           .map((t) => t.trim())
           .filter((t) => t),
       };
-      return base44.entities.SourceCode.create(submitData);
+      return repo
+        ? base44.entities.SourceCode.update(repo.id, submitData)
+        : base44.entities.SourceCode.create(submitData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["sourcecode"]);
@@ -64,7 +66,9 @@ export default function AddSourceCodeModal({ onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-[#41436A] p-8 flex items-center justify-between">
-          <h2 className="text-2xl font-light text-white">Add Repository</h2>
+          <h2 className="text-2xl font-light text-white">
+            {repo ? "Edit Repository" : "Add Repository"}
+          </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 transition-colors"
@@ -82,7 +86,7 @@ export default function AddSourceCodeModal({ onClose }) {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="my-project"
               required
-              className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+              className="mt-2 border-gray-300 rounded-none"
             />
           </div>
 
@@ -113,7 +117,7 @@ export default function AddSourceCodeModal({ onClose }) {
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
               placeholder="https://github.com/username/repo"
               required
-              className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+              className="mt-2 border-gray-300 rounded-none"
             />
           </div>
 
@@ -127,7 +131,7 @@ export default function AddSourceCodeModal({ onClose }) {
               }
               placeholder="Brief description"
               rows={3}
-              className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+              className="mt-2 border-gray-300 rounded-none"
             />
           </div>
 
@@ -138,7 +142,7 @@ export default function AddSourceCodeModal({ onClose }) {
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               placeholder="React, TypeScript, API"
-              className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+              className="mt-2 border-gray-300 rounded-none"
             />
             <p className="text-xs text-gray-500 mt-2 font-light">
               Separate tags with commas
@@ -158,7 +162,13 @@ export default function AddSourceCodeModal({ onClose }) {
               disabled={mutation.isPending}
               className="px-5 py-2 bg-[#984063] text-white hover:bg-[#F64668] transition-colors text-sm font-light"
             >
-              {mutation.isPending ? "Adding..." : "Add Repository"}
+              {mutation.isPending
+                ? repo
+                  ? "Saving..."
+                  : "Adding..."
+                : repo
+                ? "Save Changes"
+                : "Add Repository"}
             </button>
           </div>
         </form>

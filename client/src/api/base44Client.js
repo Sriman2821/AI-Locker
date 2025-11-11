@@ -17,7 +17,73 @@ const storage = {
 
 export const base44 = {
   auth: {
-    me: async () => storage.users[0]
+    me: async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to get user data');
+      }
+      return response.json();
+    },
+    login: async (email, password) => {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      if (!response.ok) {
+        throw new Error('Invalid credentials');
+      }
+      return response.json();
+    },
+    signup: async (userData) => {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create account');
+      }
+      return response.json();
+    },
+    forgotPassword: async (email) => {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to process request');
+      }
+      return response.json();
+    },
+    resetPassword: async (token, password) => {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token, password })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to reset password');
+      }
+      return response.json();
+    }
   },
   entities: {
     Topic: {
@@ -173,6 +239,24 @@ export const base44 = {
           return storage.users[index];
         }
         throw new Error('User not found');
+      }
+    }
+  }
+};
+
+base44.integrations = {
+  Core: {
+    UploadFile: async ({ file }) => {
+      try {
+        const fileUrl = URL.createObjectURL(file);
+        return {
+          file_url: fileUrl,
+          file_name: file.name,
+          mime_type: file.type,
+          size: file.size,
+        };
+      } catch (error) {
+        throw new Error('Mock upload failed');
       }
     }
   }

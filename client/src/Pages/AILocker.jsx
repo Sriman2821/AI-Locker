@@ -1,36 +1,44 @@
-import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-import { BookOpen, Wrench, Code2, Search, X, Settings } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { BookOpen, Code2, Settings, Wrench } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import LearningTab from '@/Components/ailocker/LearningTab';
+import ToolsTab from '@/Components/ailocker/ToolsTab';
+import SourceCodeTab from '@/Components/ailocker/SourceCodeTab';
+import AdminControls from '@/Components/ailocker/AdminControls';
+import AccessManagementModal from '@/Components/ailocker/AccessManagementModal';
 
-import LearningTab from "../components/ailocker/LearningTab";
-import ToolsTab from "../components/ailocker/ToolsTab";
-import SourceCodeTab from "../components/ailocker/SourceCodeTab";
-import AdminControls from "../components/ailocker/AdminControls";
-import AccessManagementModal from "../components/ailocker/AccessManagementModal";
-
-export default function AILocker() {
-  const [activeTab, setActiveTab] = useState("learning");
-  const [user, setUser] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const [showAccessManagement, setShowAccessManagement] = useState(false);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
+function AILocker() {
+  console.log('AILocker: Component rendering');
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  // Persist selected tab so a full page refresh doesn't reset to "learning"
+  const initialTab = (() => {
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
+      return localStorage.getItem('ai_locker_active_tab') || 'learning';
+    } catch {
+      return 'learning';
     }
+  })();
+  const [activeTab, _setActiveTab] = useState(initialTab);
+
+  const setActiveTab = (tab) => {
+    _setActiveTab(tab);
+    try { localStorage.setItem('ai_locker_active_tab', tab); } catch {}
   };
+  // page-level search inputs are handled inside each tab for better UX
+  const [showAccessManagement, setShowAccessManagement] = useState(false);
+  
+  console.log('AILocker: User state:', user);
+
+  // Keep localStorage in sync if other parts of the app modify active tab in future
+  useEffect(() => {
+    try { localStorage.setItem('ai_locker_active_tab', activeTab); } catch {}
+  }, [activeTab]);
 
   const isLoggedIn = !!user;
+  const isAdmin = user?.role === 'admin';
 
   const tabs = [
     { id: "learning", label: "Learning", icon: BookOpen },
@@ -88,44 +96,10 @@ export default function AILocker() {
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Search */}
-            <div className="relative">
-              {showSearch ? (
-                <motion.div
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 300, opacity: 1 }}
-                  exit={{ width: 0, opacity: 0 }}
-                  className="flex items-center gap-2"
-                >
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search..."
-                    className="border-white/30 bg-white/10 text-white placeholder:text-white/50 focus:border-[#FE9677] rounded-none h-9"
-                    autoFocus
-                  />
-                  <button
-                    onClick={() => {
-                      setShowSearch(false);
-                      setSearchQuery("");
-                    }}
-                    className="text-white/50 hover:text-white"
-                  >
-                    <X className="w-5 h-5" strokeWidth={1.5} />
-                  </button>
-                </motion.div>
-              ) : (
-                <button
-                  onClick={() => setShowSearch(true)}
-                  className="text-white/50 hover:text-white transition-colors"
-                >
-                  <Search className="w-5 h-5" strokeWidth={1.5} />
-                </button>
-              )}
-            </div>
+            {/* per-page search inputs moved into each tab for consistency */}
 
-            {/* Access Management */}
-            {user && (
+            {/* Access Management - Admin Only */}
+            {isAdmin && (
               <button
                 onClick={() => setShowAccessManagement(true)}
                 className="text-white/50 hover:text-white transition-colors"
@@ -135,23 +109,27 @@ export default function AILocker() {
               </button>
             )}
 
-            {/* User Info */}
+            {/* User Info + Logout */}
             {user && (
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#FE9677] flex items-center justify-center">
-                  <span className="text-[#41436A] text-xs font-light">
-                    {user.full_name?.[0] || user.email[0].toUpperCase()}
-                  </span>
+                <div className="px-4 py-2 bg-[#FE9677] rounded text-[#41436A] text-sm font-light">
+                  {user.full_name || user.name}
                 </div>
+
+                <button
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }}
+                  className="ml-2 flex items-center justify-center px-3 py-2 bg-[#F64668] text-white rounded hover:bg-[#FE9677] transition-colors"
+                  title="Logout"
+                >
+                  {/* Lucide logout icon */}
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                  </svg>
+                </button>
               </div>
-            )}
-            {!user && (
-              <button
-                onClick={() => base44.auth.redirectToLogin()}
-                className="text-sm text-white hover:text-[#FE9677] transition-colors font-light"
-              >
-                Login
-              </button>
             )}
           </div>
         </div>
@@ -168,15 +146,15 @@ export default function AILocker() {
             transition={{ duration: 0.2 }}
             className="h-full"
           >
-            {activeTab === "learning" && <LearningTab isAdmin={isLoggedIn} searchQuery={searchQuery} />}
-            {activeTab === "tools" && <ToolsTab isAdmin={isLoggedIn} searchQuery={searchQuery} />}
-            {activeTab === "sourcecode" && <SourceCodeTab isAdmin={isLoggedIn} searchQuery={searchQuery} />}
+            {activeTab === "learning" && <LearningTab isAdmin={isAdmin} />}
+            {activeTab === "tools" && <ToolsTab isAdmin={isAdmin} />}
+            {activeTab === "sourcecode" && <SourceCodeTab isAdmin={isAdmin} />}
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Admin Controls */}
-      {isLoggedIn && <AdminControls activeTab={activeTab} />}
+      {isLoggedIn && isAdmin && <AdminControls activeTab={activeTab} />}
 
       {/* Access Management Modal */}
       <AnimatePresence>
@@ -187,3 +165,5 @@ export default function AILocker() {
     </div>
   );
 }
+
+export default AILocker;

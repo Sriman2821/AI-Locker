@@ -1,14 +1,21 @@
 import { useState } from "react";
+import { Input } from "@/Components/ui/input";
+import { Search } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/productionClient";
 import ToolCategoryCard from "./ToolCategoryCard";
 
-export default function ToolsTab({ isAdmin, searchQuery }) {
+export default function ToolsTab({ isAdmin }) {
+  const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState(new Set());
+  const [expandedCategories, setExpandedCategories] = useState(new Set());
   const queryClient = useQueryClient();
   const [hasError, setHasError] = useState(false);
+
+  // Admin permission checks
+  const canManageTools = isAdmin;
 
   // (inline create controls removed) 
 
@@ -22,7 +29,17 @@ export default function ToolsTab({ isAdmin, searchQuery }) {
     queryFn: () => base44.entities.Tool.list(),
   });
   const filteredCategories = categories.filter(
-    (cat) => cat.is_visible && (!searchQuery || cat.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    (cat) => cat.is_visible && (!search || cat.name.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  // If the search matches a category name, include that category's id so tools
+  // inside that category will still be shown even if their name/url doesn't
+  // directly match the search text.
+  const lowerSearch = search.toLowerCase();
+  const matchedCategoryIds = new Set(
+    categories
+      .filter((cat) => search && cat.name.toLowerCase().includes(lowerSearch))
+      .map((c) => c._id)
   );
 
   // visible categories based on selected pills (if none selected, show all)
@@ -33,9 +50,11 @@ export default function ToolsTab({ isAdmin, searchQuery }) {
   const filteredTools = tools.filter(
     (tool) => {
       // First check if the tool matches search query
-      const matchesSearch = !searchQuery || 
-        tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tool.url?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = !search || 
+        tool.name.toLowerCase().includes(lowerSearch) ||
+        tool.url?.toLowerCase().includes(lowerSearch) ||
+        // Also consider tools whose category name matches the search
+        matchedCategoryIds.has(tool.category_id?._id ?? tool.category_id);
 
       // Then check if its category is selected (when categories are selected)
       const toolCategoryId = tool.category_id?._id ?? tool.category_id;
@@ -73,16 +92,6 @@ export default function ToolsTab({ isAdmin, searchQuery }) {
             Tools
           </motion.h2>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const ids = new Set(filteredCategories.map((c) => c._id));
-                setSelectedCategories(ids);
-              }}
-            >
-              Select All
-            </Button>
             <Button 
               variant="outline"
               size="sm"
@@ -90,6 +99,21 @@ export default function ToolsTab({ isAdmin, searchQuery }) {
             >
               Clear All
             </Button>
+            <div className="flex items-center gap-2">
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tools..."
+                className="border-gray-300 rounded-none"
+              />
+              <button
+                onClick={() => { /* noop - filtering is live */ }}
+                className="px-3 py-2 bg-[#41436A] text-white rounded"
+                title="Search tools"
+              >
+                <Search className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -135,13 +159,17 @@ export default function ToolsTab({ isAdmin, searchQuery }) {
             <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {visibleCategories.map((category) => {
                 const tools = toolsByCategory[category._id] || [];
+                const hiddenCount = Math.max(0, tools.length - 6);
+                const isExpanded = expandedCategories.has(category._id);
+                const visibleTools = isExpanded ? tools : tools.slice(0, 6);
+                const remainingCount = isExpanded ? hiddenCount : Math.max(0, tools.length - visibleTools.length);
                 return (
                   <motion.div 
                     key={category._id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="col-span-1 bg-white rounded-lg border h-64 overflow-hidden flex flex-col"
+                    className="col-span-1 bg-white rounded-lg border flex flex-col min-h-[16rem]"
                   >
                     {/* Header strip */}
                     <div className="bg-[#3B3A5A] text-white px-6 py-4">
@@ -156,7 +184,7 @@ export default function ToolsTab({ isAdmin, searchQuery }) {
                           animate={{ opacity: 1, y: 0 }}
                           className="grid grid-cols-3 gap-8 items-start"
                         >
-                          {tools.map((tool) => (
+                          {visibleTools.map((tool) => (
                             <motion.div key={tool._id} layout className="col-span-1 flex justify-center">
                               <ToolCategoryCard tool={tool} />
                             </motion.div>
@@ -169,6 +197,27 @@ export default function ToolsTab({ isAdmin, searchQuery }) {
                           </div>
                         </div>
                       )}
+                        {hiddenCount > 0 && (
+                          <div className="mt-6 flex justify-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setExpandedCategories((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(category._id)) {
+                                    next.delete(category._id);
+                                  } else {
+                                    next.add(category._id);
+                                  }
+                                  return next;
+                                });
+                              }}
+                            >
+                              {isExpanded ? "Hide" : `+${hiddenCount} more`}
+                            </Button>
+                          </div>
+                        )}
                     </div>
                   </motion.div>
                 );
