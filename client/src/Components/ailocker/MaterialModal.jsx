@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/productionClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Upload, Image as ImageIcon, Video, FileText, FileSpreadsheet, Presentation } from "lucide-react";
+import { X, Upload, Image as ImageIcon, Video, FileText, FileSpreadsheet, Presentation, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
@@ -239,7 +239,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-3 sm:p-4"
+    className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-2 sm:p-3"
       onClick={(e) => {
         e.stopPropagation();
         if (isDirty) {
@@ -260,7 +260,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
         className="bg-white max-w-4xl w-full max-h-[95vh] overflow-y-auto rounded-lg sm:rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-[#41436A] p-4 sm:p-8 flex items-center justify-between">
+  <div className="sticky top-0 bg-[#41436A] p-3 sm:p-5 flex items-center justify-between">
           <h2 className="text-lg sm:text-2xl font-light text-white">
             {material ? "Edit Material" : "Add Material"}
           </h2>
@@ -272,8 +272,8 @@ export default function MaterialModal({ material, topicId, onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-5 space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             <div className="col-span-full">
               <Label htmlFor="title" className="text-xs sm:text-sm font-light text-[#41436A]">Title</Label>
               <Input
@@ -303,14 +303,14 @@ export default function MaterialModal({ material, topicId, onClose }) {
             
 
             <div>
-              <Label htmlFor="assigned_user" className="text-xs sm:text-sm font-light text-[#41436A]">Content Owner</Label>
+              <Label htmlFor="assigned_user" className="text-xs sm:text-sm font-light text-[#41436A]">Author</Label>
               <Input
                 id="assigned_user"
                 value={formData.assigned_user}
                 onChange={(e) =>
                   setFormData({ ...formData, assigned_user: e.target.value })
                 }
-                placeholder="Owner name"
+                placeholder="Author name"
                 className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
               />
             </div>
@@ -357,16 +357,17 @@ export default function MaterialModal({ material, topicId, onClose }) {
                     <button
                       type="button"
                       onClick={() => requestRemoveLink(idx)}
-                      className="text-xs text-[#F64668] hover:text-[#984063] justify-self-start"
+                      className="p-1 text-[#F64668] hover:text-[#984063] justify-self-start"
+                      title="Delete link"
                     >
-                      Remove
+                      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                     </button>
                   </div>
                 ))}
                 <button
                   type="button"
                   onClick={addEmptyLink}
-                  className="px-3 py-1 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs font-light"
+                  className="px-2 py-1 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs font-light"
                 >
                   Add link
                 </button>
@@ -376,11 +377,12 @@ export default function MaterialModal({ material, topicId, onClose }) {
             <div className="col-span-2">
               <Label className="text-sm font-light text-[#41436A]">Upload Files</Label>
               <div className="mt-2">
-                <label className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 hover:border-[#F64668] cursor-pointer transition-colors">
+                <label className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 hover:border-[#F64668] cursor-pointer transition-colors">
                   <Upload className="w-4 h-4 text-[#984063]" strokeWidth={1.5} />
                   <span className="text-sm text-[#41436A] font-light">
-                    {uploading ? "Uploading..." : "Choose file(s)"}
-                    {uploadedFileName ? `: ${uploadedFileName}` : ""}
+                    {uploading
+                      ? "Uploading..."
+                      : (uploadedFileName ? "Choose another file" : "Choose file(s)")}
                   </span>
                   <input
                     type="file"
@@ -395,7 +397,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
                     {formData.files.map((f, idx) => {
                       const Icon = getFileTypeIcon(f.type || "file");
                       return (
-                        <div key={idx} className="grid grid-cols-12 gap-3 items-center px-4 py-2 bg-gray-50 border-b last:border-b-0">
+                        <div key={idx} className="grid grid-cols-12 gap-2 items-center px-3 py-1.5 bg-gray-50 border-b last:border-b-0">
                           <div className="col-span-6 flex items-center gap-2 min-w-0">
                             <Icon className="w-4 h-4 text-[#984063] shrink-0" strokeWidth={1.5} />
                             <span className="text-xs text-[#41436A] font-light truncate">
@@ -448,10 +450,11 @@ export default function MaterialModal({ material, topicId, onClose }) {
                           <div className="col-span-2 flex justify-end">
                             <button
                               type="button"
-                          onClick={() => requestRemoveUploadedFile(idx)}
-                              className="text-xs text-[#F64668] hover:text-[#984063]"
+                              onClick={() => requestRemoveUploadedFile(idx)}
+                              className="p-1 text-[#F64668] hover:text-[#984063]"
+                              title="Delete file"
                             >
-                              Remove
+                              <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                             </button>
                           </div>
                         </div>

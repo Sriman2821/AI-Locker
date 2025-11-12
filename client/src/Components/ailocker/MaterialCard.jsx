@@ -62,13 +62,13 @@ export default function MaterialCard({
       className={`
         group relative bg-white border border-gray-200 overflow-visible
         hover:border-[#F64668] transition-all duration-200
-        h-auto sm:h-80 flex flex-col
+  h-auto sm:h-[17rem] flex flex-col
       `}
     >
 
-  <div className="p-3 sm:p-6 flex-1 flex flex-col justify-between overflow-hidden">
+  <div className="p-2 sm:p-3 flex-1 flex flex-col justify-between overflow-hidden">
         <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
-          <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
             <h3 className="text-sm sm:text-base font-normal text-[#41436A] mb-1 sm:mb-2 line-clamp-2">
               {material.title}
             </h3>
@@ -80,31 +80,34 @@ export default function MaterialCard({
           </div>
         </div>
 
-        <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4 text-xs text-gray-500 font-light">
+  <div className="space-y-1 mb-2 text-xs text-gray-500 font-light">
           {material.assigned_user && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
+              <span className="whitespace-nowrap">Author :</span>
               <span className="truncate">{material.assigned_user}</span>
             </div>
           )}
           {material.session_number && (
-            <div className="flex items-center gap-2">
-              <span>Session {material.session_number}</span>
+            <div className="flex items-start gap-2">
+              <span className="whitespace-nowrap">Session :</span>
+              <span>{material.session_number}</span>
             </div>
           )}
           {material.date_presented && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs">{format(new Date(material.date_presented), "MMM d")}</span>
+            <div className="flex items-start gap-2">
+              <span className="whitespace-nowrap">Session Date :</span>
+              <span>{format(new Date(material.date_presented), "dd-MMM-yyyy")}</span>
             </div>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-1 sm:gap-2 pt-2 sm:pt-4 border-t border-gray-100">
+  <div className="flex flex-wrap items-center gap-1 sm:gap-2 pt-1 sm:pt-2 border-t border-gray-100">
             {/* Left controls: files dropdown then small link button */}
             <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
               {material.files && material.files.length > 0 && (
                 <div className="relative group">
                   <button
-                    className="px-2 sm:px-3 py-1 sm:py-2 bg-[#984063] text-white hover:bg-[#F64668] transition-colors flex items-center justify-between gap-1 sm:gap-2 text-xs font-light"
+                      className="px-2 sm:px-2 py-1 bg-[#984063] text-white hover:bg-[#F64668] transition-colors flex items-center justify-between gap-1 sm:gap-2 text-xs font-light"
                     onClick={() => {
                       setShowFilesDropdown(!showFilesDropdown);
                       if (!showFilesDropdown) setShowLinksDropdown(false);
@@ -118,7 +121,7 @@ export default function MaterialCard({
                   </button>
 
                   {showFilesDropdown && (
-                    <div className="absolute bottom-full left-0 mb-1 bg-white border border-gray-300 shadow-lg z-50 max-h-64 overflow-y-auto w-72">
+                    <div className="absolute bottom-full mb-1 bg-white border border-gray-300 shadow-lg z-50 max-h-64 overflow-y-auto w-72" style={{ left: '10px' }}>
                       {material.files.map((file, index) => {
                         const isGenericFile = (file.type || 'file') === 'file';
                         return (
@@ -128,7 +131,7 @@ export default function MaterialCard({
                             target="_blank"
                             rel="noopener noreferrer"
                             title={file.name || `File ${index + 1}`}
-                            className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs font-light text-[#41436A] group/item transition-colors"
+                            className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1 sm:py-1.5 border-b border-gray-100 last:border-b-0 text-xs font-light text-[#41436A] group/item transition-colors"
                           >
                             {(() => {
                               const FileIcon = getFileTypeIcon(file.type || "file");
@@ -149,7 +152,7 @@ export default function MaterialCard({
                   {links.length > 1 ? (
                     <>
                       <button
-                        className="px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors flex items-center gap-1 sm:gap-2 text-xs font-light"
+                          className="px-2 sm:px-2 py-1 border border-gray-300 text-[#41436A] transition-colors flex items-center gap-1 sm:gap-2 text-xs font-light"
                         onClick={() => {
                           setShowLinksDropdown(!showLinksDropdown);
                           if (!showLinksDropdown) setShowFilesDropdown(false);
@@ -161,7 +164,7 @@ export default function MaterialCard({
                       </button>
 
                       {showLinksDropdown && (
-                        <div className="absolute bottom-full left-0 mb-1 bg-white border border-gray-300 shadow-lg z-50 max-h-40 overflow-y-auto w-48 sm:w-56 md:w-64 text-xs">
+                        <div className="absolute bottom-full mb-1 bg-white border border-gray-300 shadow-lg z-50 max-h-40 overflow-y-auto w-48 sm:w-56 md:w-64 text-xs" style={{ left: '-50px' }}>
                           {links.map((link, idx) => (
                             <a
                               key={idx}
@@ -169,7 +172,7 @@ export default function MaterialCard({
                               target="_blank"
                               rel="noopener noreferrer"
                               title={link.url}
-                              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs font-light text-[#41436A] group/item transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 border-b border-gray-100 last:border-b-0 text-xs font-light text-[#41436A] group/item transition-colors"
                             >
                               <Link className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-[#2B6CB0] flex-shrink-0" strokeWidth={1.5} />
                               <span className="flex-1 truncate">{link.name || link.url}</span>
@@ -181,12 +184,12 @@ export default function MaterialCard({
                     </>
                   ) : (
                     <button
-                      type="button"
-                      onClick={() => window.open(links[0].url, "_blank", "noopener,noreferrer")}
-                      className="px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors flex items-center gap-1 sm:gap-2 text-xs font-light"
-                      title={links[0].url}
-                    >
-                      <Link className="w-3 h-3" strokeWidth={1.5} />
+                        type="button"
+                        onClick={() => window.open(links[0].url, "_blank", "noopener,noreferrer")}
+                        className="px-2 sm:px-2 py-1 border border-gray-300 text-[#41436A] transition-colors flex items-center gap-1 sm:gap-2 text-xs font-light"
+                        title={links[0].url}
+                      >
+                      <Link className="w-3 sm:w-4 h-3 sm:h-4 text-[#2B6CB0]" strokeWidth={1.5} />
                       <span>(1)</span>
                     </button>
                   )}
@@ -203,7 +206,7 @@ export default function MaterialCard({
               {canEdit && (
                 <button
                   onClick={onEdit}
-                  className="p-1 sm:p-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors"
+                    className="p-1 sm:p-1 border border-gray-300 text-[#41436A] transition-colors"
                   title="Edit"
                 >
                   <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
@@ -212,7 +215,7 @@ export default function MaterialCard({
               {canDelete && (
                   <button
                   onClick={() => setShowConfirm(true)}
-                  className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
+                    className="p-1 sm:p-1 border border-gray-300 text-gray-500 transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />

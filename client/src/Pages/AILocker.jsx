@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, Code2, Settings, Wrench } from 'lucide-react';
+import { BookOpen, Code2, Wrench } from 'lucide-react';
+import ShieldUser from '@/Components/ui/ShieldUser';
 import { useAuth } from '../contexts/AuthContext';
 import LearningTab from '@/Components/ailocker/LearningTab';
 import ToolsTab from '@/Components/ailocker/ToolsTab';
@@ -112,10 +113,10 @@ function AILocker() {
             {isAdmin && (
               <button
                 onClick={() => setShowAccessManagement(true)}
-                className="text-white/50 hover:text-white transition-colors flex-shrink-0"
+                className="text-white/80 hover:text-white transition-colors flex-shrink-0"
                 title="Access Management"
               >
-                <Settings className="w-4 sm:w-5 h-4 sm:h-5" strokeWidth={1.5} />
+                <ShieldUser className="w-6 sm:w-7 h-6 sm:h-7" strokeWidth={2} />
               </button>
             )}
 

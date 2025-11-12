@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/productionClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/Components/ui/select";
+import ConfirmModal from "@/Components/ui/ConfirmModal";
 
 export default function AddSourceCodeModal({ onClose, repo = null }) {
   const [formData, setFormData] = useState({
@@ -23,6 +24,40 @@ export default function AddSourceCodeModal({ onClose, repo = null }) {
     description: repo?.description || "",
     tags: Array.isArray(repo?.tags) ? repo.tags.join(", ") : "",
   });
+  const [isDirty, setIsDirty] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const initialSnapshotRef = useRef(null);
+
+  // Capture initial snapshot once
+  useEffect(() => {
+    if (initialSnapshotRef.current == null) {
+      initialSnapshotRef.current = JSON.stringify({
+        name: repo?.name || "",
+        platform: repo?.platform || "github",
+        url: repo?.url || "",
+        description: repo?.description || "",
+        tags: Array.isArray(repo?.tags) ? repo.tags.join(", ") : "",
+      });
+    }
+  }, [repo]);
+
+  // Track dirty state whenever form data changes
+  useEffect(() => {
+    const current = JSON.stringify(formData);
+    setIsDirty(initialSnapshotRef.current !== current);
+  }, [formData]);
+
+  const requestCloseModal = () => {
+    if (isDirty) {
+      setConfirmAction({
+        type: "save-and-exit",
+        title: "Unsaved changes",
+        description: "You have unsaved changes. Save and exit?",
+      });
+      return;
+    }
+    onClose();
+  };
 
   const queryClient = useQueryClient();
 
@@ -56,13 +91,13 @@ export default function AddSourceCodeModal({ onClose, repo = null }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
+        onClick={requestCloseModal}
     >
       <motion.div
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
-        className="bg-white max-w-2xl w-full"
+        className="bg-white max-w-4xl w-full max-h-[95vh] overflow-y-auto rounded-lg sm:rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-[#41436A] p-8 flex items-center justify-between">
@@ -70,7 +105,7 @@ export default function AddSourceCodeModal({ onClose, repo = null }) {
             {repo ? "Edit Repository" : "Add Repository"}
           </h2>
           <button
-            onClick={onClose}
+            onClick={requestCloseModal}
             className="p-2 hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5 text-white" strokeWidth={1.5} />
@@ -152,7 +187,7 @@ export default function AddSourceCodeModal({ onClose, repo = null }) {
           <div className="flex gap-3 justify-end pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestCloseModal}
               className="px-5 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-sm font-light"
             >
               Cancel
@@ -172,6 +207,23 @@ export default function AddSourceCodeModal({ onClose, repo = null }) {
             </button>
           </div>
         </form>
+        <ConfirmModal
+          open={!!confirmAction}
+          title={confirmAction?.title}
+          description={confirmAction?.description}
+          confirmLabel={confirmAction?.type === 'save-and-exit' ? 'Save & Exit' : (confirmAction?.confirmLabel || 'Discard')}
+          cancelLabel="Cancel"
+          onClose={() => setConfirmAction(null)}
+          onConfirm={() => {
+            if (confirmAction?.type === 'save-and-exit') {
+              // Save the repo (mutation's onSuccess will close)
+              mutation.mutate(formData);
+              setConfirmAction(null);
+            } else {
+              setConfirmAction(null);
+            }
+          }}
+        />
       </motion.div>
     </motion.div>
   );
