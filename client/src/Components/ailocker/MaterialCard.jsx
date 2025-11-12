@@ -62,28 +62,28 @@ export default function MaterialCard({
       className={`
         group relative bg-white border border-gray-200 overflow-visible
         hover:border-[#F64668] transition-all duration-200
-        h-80 flex flex-col
+        h-auto sm:h-80 flex flex-col
       `}
     >
 
-  <div className="p-6 flex-1 flex flex-col justify-between overflow-hidden">
-        <div className="flex items-start gap-3 mb-4">
+  <div className="p-3 sm:p-6 flex-1 flex flex-col justify-between overflow-hidden">
+        <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-normal text-[#41436A] mb-2 line-clamp-2">
+            <h3 className="text-sm sm:text-base font-normal text-[#41436A] mb-1 sm:mb-2 line-clamp-2">
               {material.title}
             </h3>
             {material.description && (
-              <p className="text-sm text-gray-500 font-light whitespace-pre-wrap max-h-40 overflow-y-auto pr-1">
+              <p className="text-xs sm:text-sm text-gray-500 font-light whitespace-pre-wrap max-h-24 sm:max-h-40 overflow-y-auto pr-1">
                 {material.description}
               </p>
             )}
           </div>
         </div>
 
-        <div className="space-y-2 mb-4 text-xs text-gray-500 font-light">
+        <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4 text-xs text-gray-500 font-light">
           {material.assigned_user && (
             <div className="flex items-center gap-2">
-              <span>{material.assigned_user}</span>
+              <span className="truncate">{material.assigned_user}</span>
             </div>
           )}
           {material.session_number && (
@@ -93,25 +93,25 @@ export default function MaterialCard({
           )}
           {material.date_presented && (
             <div className="flex items-center gap-2">
-              <span>{format(new Date(material.date_presented), "MMM d, yyyy")}</span>
+              <span className="text-xs">{format(new Date(material.date_presented), "MMM d")}</span>
             </div>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-gray-100 whitespace-nowrap">
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2 pt-2 sm:pt-4 border-t border-gray-100">
             {/* Left controls: files dropdown then small link button */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
               {material.files && material.files.length > 0 && (
                 <div className="relative group">
                   <button
-                    className="px-3 py-2 bg-[#984063] text-white hover:bg-[#F64668] transition-colors flex items-center justify-between gap-2 text-xs font-light"
+                    className="px-2 sm:px-3 py-1 sm:py-2 bg-[#984063] text-white hover:bg-[#F64668] transition-colors flex items-center justify-between gap-1 sm:gap-2 text-xs font-light"
                     onClick={() => {
                       setShowFilesDropdown(!showFilesDropdown);
                       if (!showFilesDropdown) setShowLinksDropdown(false);
                     }}
                   >
-                    <span className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-white" strokeWidth={1.5} />
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      <FileText className="w-3 sm:w-4 h-3 sm:h-4 text-white" strokeWidth={1.5} />
                       <span>({material.files.length})</span>
                     </span>
                     <ChevronDown className={`w-3 h-3 transition-transform ${showFilesDropdown ? 'rotate-180' : ''}`} strokeWidth={1.5} />
@@ -128,14 +128,14 @@ export default function MaterialCard({
                             target="_blank"
                             rel="noopener noreferrer"
                             title={file.name || `File ${index + 1}`}
-                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs font-light text-[#41436A] group/item transition-colors"
+                            className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs font-light text-[#41436A] group/item transition-colors"
                           >
                             {(() => {
                               const FileIcon = getFileTypeIcon(file.type || "file");
-                              return <FileIcon className="w-4 h-4 text-[#984063] flex-shrink-0" strokeWidth={1.5} />;
+                              return <FileIcon className="w-3 sm:w-4 h-3 sm:h-4 text-[#984063] flex-shrink-0" strokeWidth={1.5} />;
                             })()}
-                            <span className="flex-1 truncate hover:underline">{file.name || `File ${index + 1}`}</span>
-                            <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity" strokeWidth={1.5} />
+                            <span className="flex-1 truncate text-xs hover:underline">{file.name || `File ${index + 1}`}</span>
+                            <ExternalLink className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-gray-400 flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity" strokeWidth={1.5} />
                           </a>
                         );
                       })}
@@ -149,19 +149,19 @@ export default function MaterialCard({
                   {links.length > 1 ? (
                     <>
                       <button
-                        className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors flex items-center gap-2 text-xs font-light"
+                        className="px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors flex items-center gap-1 sm:gap-2 text-xs font-light"
                         onClick={() => {
                           setShowLinksDropdown(!showLinksDropdown);
                           if (!showLinksDropdown) setShowFilesDropdown(false);
                         }}
                       >
-                        <Link className="w-4 h-4 text-[#2B6CB0]" strokeWidth={1.5} />
+                        <Link className="w-3 sm:w-4 h-3 sm:h-4 text-[#2B6CB0]" strokeWidth={1.5} />
                         <span>({links.length})</span>
                         <ChevronDown className={`w-3 h-3 transition-transform ${showLinksDropdown ? 'rotate-180' : ''}`} strokeWidth={1.5} />
                       </button>
 
                       {showLinksDropdown && (
-                        <div className="absolute bottom-full left-0 -translate-x-[20%] mb-1 bg-white border border-gray-300 shadow-lg z-50 max-h-48 overflow-y-auto w-64">
+                        <div className="absolute bottom-full left-0 mb-1 bg-white border border-gray-300 shadow-lg z-50 max-h-40 overflow-y-auto w-48 sm:w-56 md:w-64 text-xs">
                           {links.map((link, idx) => (
                             <a
                               key={idx}
@@ -169,11 +169,11 @@ export default function MaterialCard({
                               target="_blank"
                               rel="noopener noreferrer"
                               title={link.url}
-                              className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs font-light text-[#41436A] group/item transition-colors"
+                              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs font-light text-[#41436A] group/item transition-colors"
                             >
-                              <Link className="w-3 h-3 text-[#2B6CB0] flex-shrink-0" strokeWidth={1.5} />
-                              <span className="flex-1 truncate max-w-[180px]">{link.name || link.url}</span>
-                              <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity" strokeWidth={1.5} />
+                              <Link className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-[#2B6CB0] flex-shrink-0" strokeWidth={1.5} />
+                              <span className="flex-1 truncate">{link.name || link.url}</span>
+                              <ExternalLink className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-gray-400 flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity" strokeWidth={1.5} />
                             </a>
                           ))}
                         </div>
@@ -183,7 +183,7 @@ export default function MaterialCard({
                     <button
                       type="button"
                       onClick={() => window.open(links[0].url, "_blank", "noopener,noreferrer")}
-                      className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors flex items-center gap-2 text-xs font-light"
+                      className="px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors flex items-center gap-1 sm:gap-2 text-xs font-light"
                       title={links[0].url}
                     >
                       <Link className="w-3 h-3" strokeWidth={1.5} />
@@ -195,27 +195,27 @@ export default function MaterialCard({
             </div>
 
             {/* Spacer pushes edit/delete to the right */}
-            <div className="flex-1" />
+            <div className="flex-1 min-w-2" />
 
           {/* Right slot: gated by permissions */}
           {(isAdmin && (canEdit || canDelete)) && (
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {canEdit && (
                 <button
                   onClick={onEdit}
-                  className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors"
+                  className="p-1 sm:p-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors"
                   title="Edit"
                 >
-                  <Edit2 className="w-3 h-3" strokeWidth={1.5} />
+                  <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                 </button>
               )}
               {canDelete && (
-                <button
+                  <button
                   onClick={() => setShowConfirm(true)}
-                  className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors"
+                  className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                   title="Delete"
                 >
-                  <Trash2 className="w-3 h-3" strokeWidth={1.5} />
+                  <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                 </button>
               )}
             </div>

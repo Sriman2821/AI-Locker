@@ -254,18 +254,24 @@ export default function ManageToolsModal({ onClose }) {
                                                                                                                 </>
                                                                                                             ) : (
                                                                                                                 <>
-                                                                                                                                                                            <Button
-                                                                                                                                                                                onClick={() => {
-                                                                                                                                                                                    // Initialize edit buffer from current values
-                                                                                                                                                                                    setEditCategoryValues((s) => ({ ...s, [cat._id]: { name: cat.name, description: cat.description } }));
-                                                                                                                                                                                    setEditingCategoryId(cat._id);
-                                                                                                                                                                                }}
-                                                                                                                                                                            >
-                                                                                                                                                                                <Edit2 className="w-4 h-4" />
-                                                                                                                                                                            </Button>
-                                                    <Button onClick={() => setConfirmAction({ type: 'delete-category', id: cat._id, name: cat.name })}>
-                                                        <Trash2 className="w-4 h-4 text-[#F64668]" />
-                                                    </Button>
+                                                                                                                                                                                <Button
+                                                                                                                                                                                    variant="outline"
+                                                                                                                                                                                    className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50"
+                                                                                                                                                                                    onClick={() => {
+                                                                                                                                                                                        // Initialize edit buffer from current values
+                                                                                                                                                                                        setEditCategoryValues((s) => ({ ...s, [cat._id]: { name: cat.name, description: cat.description } }));
+                                                                                                                                                                                        setEditingCategoryId(cat._id);
+                                                                                                                                                                                    }}
+                                                                                                                                                                                >
+                                                                                                                                                                                    <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" />
+                                                                                                                                                                                </Button>
+                                                                                                                                                                                <Button
+                                                                                                                                                                                    variant="outline"
+                                                                                                                                                                                    className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50"
+                                                                                                                                                                                    onClick={() => setConfirmAction({ type: 'delete-category', id: cat._id, name: cat.name })}
+                                                                                                                                                                                >
+                                                                                                                                                                                    <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" />
+                                                                                                                                                                                </Button>
                                                                                                                 </>
                                                                                                             )}
                                                 </div>
@@ -360,14 +366,22 @@ export default function ManageToolsModal({ onClose }) {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            {caps.edit && <Button onClick={() => {
-                                                                setEditToolValues((s) => ({ ...s, [tool._id]: { name: tool.name, url: tool.url } }));
-                                                                setEditingToolId(tool._id);
-                                                            }}>
-                                                                <Edit2 className="w-4 h-4" />
+                                                            {caps.edit && <Button
+                                                                variant="outline"
+                                                                className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50"
+                                                                onClick={() => {
+                                                                    setEditToolValues((s) => ({ ...s, [tool._id]: { name: tool.name, url: tool.url } }));
+                                                                    setEditingToolId(tool._id);
+                                                                }}
+                                                            >
+                                                                <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" />
                                                             </Button>}
-                                                            {caps.delete && <Button onClick={() => setConfirmAction({ type: 'delete-tool', id: tool._id, name: tool.name })}>
-                                                                <Trash2 className="w-4 h-4 text-[#F64668]" />
+                                                            {caps.delete && <Button
+                                                                variant="outline"
+                                                                className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50"
+                                                                onClick={() => setConfirmAction({ type: 'delete-tool', id: tool._id, name: tool.name })}
+                                                            >
+                                                                <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" />
                                                             </Button>}
                                                         </>
                                                     )}

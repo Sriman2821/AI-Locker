@@ -20,7 +20,7 @@ export default function AdminControls({ activeTab }) {
           <button
             onClick={() => setShowManageTools(true)}
             className="w-12 h-12 bg-[#984063] text-white hover:bg-[#F64668] transition-all flex items-center justify-center"
-            title="Manage Tools"
+            title="Manage Tools & Categories"
           >
             <FolderCog className="w-5 h-5" strokeWidth={1.5} />
           </button>

@@ -58,10 +58,10 @@ function AILocker() {
       `}</style>
 
       {/* Minimalist Top Navigation */}
-      <nav className="flex-shrink-0 bg-[#41436A] border-b border-[#41436A]/20">
-        <div className="flex items-center justify-between px-12 py-6">
-          <div className="flex items-center gap-12">
-            <h1 className="text-2xl font-light text-white tracking-wide">AI Locker</h1>
+      <nav className="flex-shrink-0 bg-[#41436A] border-b border-[#41436A]/20 overflow-x-auto">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 py-3 sm:py-6 gap-4 min-w-max sm:min-w-0">
+          <div className="flex items-center gap-4 sm:gap-8 lg:gap-12 flex-shrink-0">
+            <h1 className="text-xl sm:text-2xl font-light text-white tracking-wide whitespace-nowrap">AI Locker</h1>
             
             <div className="flex gap-1">
               {tabs.map((tab) => {
@@ -71,8 +71,8 @@ function AILocker() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                      relative px-6 py-2 font-light transition-all duration-200
-                      flex items-center gap-2
+                      relative px-3 sm:px-6 py-2 font-light transition-all duration-200
+                      flex items-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm
                       ${
                         activeTab === tab.id
                           ? "text-white"
@@ -81,7 +81,7 @@ function AILocker() {
                     `}
                   >
                     <Icon className="w-4 h-4" strokeWidth={1.5} />
-                    {tab.label}
+                    <span className="hidden sm:inline">{tab.label}</span>
                     {activeTab === tab.id && (
                       <motion.div
                         layoutId="activeIndicator"
@@ -95,41 +95,44 @@ function AILocker() {
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            {/* per-page search inputs moved into each tab for consistency */}
+          <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
+            {/* User Name Display */}
+            {user && (
+              <div className="text-right hidden sm:block">
+                <p className="text-white text-sm font-light">
+                  {user.full_name || user.name || 'User'}
+                </p>
+                <p className="text-white/70 text-xs">
+                  {user.role || 'member'}
+                </p>
+              </div>
+            )}
 
             {/* Access Management - Admin Only */}
             {isAdmin && (
               <button
                 onClick={() => setShowAccessManagement(true)}
-                className="text-white/50 hover:text-white transition-colors"
+                className="text-white/50 hover:text-white transition-colors flex-shrink-0"
                 title="Access Management"
               >
-                <Settings className="w-5 h-5" strokeWidth={1.5} />
+                <Settings className="w-4 sm:w-5 h-4 sm:h-5" strokeWidth={1.5} />
               </button>
             )}
 
-            {/* User Info + Logout */}
+            {/* Logout Button */}
             {user && (
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-[#FE9677] rounded text-[#41436A] text-sm font-light">
-                  {user.full_name || user.name}
-                </div>
-
-                <button
-                  onClick={() => {
-                    logout();
-                    navigate('/login');
-                  }}
-                  className="ml-2 flex items-center justify-center px-3 py-2 bg-[#F64668] text-white rounded hover:bg-[#FE9677] transition-colors"
-                  title="Logout"
-                >
-                  {/* Lucide logout icon */}
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-                  </svg>
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+                className="flex-shrink-0 p-1.5 sm:p-2 bg-[#F64668] text-white rounded hover:bg-[#FE9677] transition-colors"
+                title="Logout"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 sm:w-5 h-4 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                </svg>
+              </button>
             )}
           </div>
         </div>

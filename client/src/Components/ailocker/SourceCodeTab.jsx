@@ -80,42 +80,42 @@ export default function SourceCodeTab({ isAdmin }) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-12">
-        <div className="flex items-center justify-between">
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-4 sm:p-8 lg:p-12 overflow-x-auto">
+        <div className="flex flex-col gap-4 sm:gap-6">
           <div>
-            <h2 className="text-3xl font-light text-[#41436A] mb-2">Source Code</h2>
-            <p className="text-gray-500 font-light">Repositories and source code links</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#41436A] mb-1 sm:mb-2">Source Code</h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-light">Repositories and source code links</p>
           </div>
 
-          <div className="w-64">
+          <div className="w-full sm:w-64">
             <div className="flex items-center gap-2">
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search repositories..."
-                className="border-gray-300 rounded-none"
+                className="border-gray-300 rounded-none text-xs sm:text-sm"
               />
               <button
                 onClick={() => { /* noop - filtering is live */ }}
-                className="px-3 py-2 bg-[#41436A] text-white rounded"
+                className="px-2 sm:px-3 py-2 bg-[#41436A] text-white rounded flex-shrink-0"
                 title="Search repos"
               >
-                <Search className="w-4 h-4" strokeWidth={1.5} />
+                <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-12">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-12">
         {filteredRepos.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-400">
             <div className="text-center">
-              <p className="mb-4 font-light">No repositories found</p>
+              <p className="mb-4 font-light text-sm sm:text-base">No repositories found</p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 max-w-7xl mx-auto">
             {filteredRepos.map((repo, index) => {
               const Icon = getPlatformIcon(repo.platform);
 
@@ -176,10 +176,10 @@ export default function SourceCodeTab({ isAdmin }) {
                                   e.stopPropagation();
                                   setEditingRepo(repo);
                                 }}
-                                className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs font-light"
+                                className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                                 title="Edit repository"
                               >
-                                <Edit2 className="w-3 h-3" strokeWidth={1.5} />
+                                <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                               </button>
                             )}
                             {caps.delete && (
@@ -191,10 +191,10 @@ export default function SourceCodeTab({ isAdmin }) {
                                   if (deleteMutation.isPending) return;
                                   setConfirmRepoDelete(repo);
                                 }}
-                                className="px-3 py-2 border border-gray-300 text-[#F64668] hover:bg-gray-50 transition-colors text-xs font-light"
+                                className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                                 title="Delete repository"
                               >
-                                <Trash2 className="w-3 h-3" strokeWidth={1.5} />
+                                <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                               </button>
                             )}
                           </div>

@@ -239,7 +239,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-3 sm:p-4"
       onClick={(e) => {
         e.stopPropagation();
         if (isDirty) {
@@ -257,37 +257,37 @@ export default function MaterialModal({ material, topicId, onClose }) {
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
-        className="bg-white max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white max-w-4xl w-full max-h-[95vh] overflow-y-auto rounded-lg sm:rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-[#41436A] p-8 flex items-center justify-between">
-          <h2 className="text-2xl font-light text-white">
+        <div className="sticky top-0 bg-[#41436A] p-4 sm:p-8 flex items-center justify-between">
+          <h2 className="text-lg sm:text-2xl font-light text-white">
             {material ? "Edit Material" : "Add Material"}
           </h2>
           <button
             onClick={requestCloseModal}
-            className="p-2 hover:bg-white/10 transition-colors"
+            className="p-1.5 sm:p-2 hover:bg-white/10 transition-colors"
           >
-            <X className="w-5 h-5 text-white" strokeWidth={1.5} />
+            <X className="w-4 sm:w-5 h-4 sm:h-5 text-white" strokeWidth={1.5} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2">
-              <Label htmlFor="title" className="text-sm font-light text-[#41436A]">Title</Label>
+        <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+            <div className="col-span-full">
+              <Label htmlFor="title" className="text-xs sm:text-sm font-light text-[#41436A]">Title</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Material title"
                 required
-                className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
               />
             </div>
 
-            <div className="col-span-2">
-              <Label htmlFor="description" className="text-sm font-light text-[#41436A]">Description</Label>
+            <div className="col-span-full">
+              <Label htmlFor="description" className="text-xs sm:text-sm font-light text-[#41436A]">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -295,15 +295,15 @@ export default function MaterialModal({ material, topicId, onClose }) {
                   setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Material description"
-                rows={3}
-                className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+                rows={2}
+                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
               />
             </div>
 
             
 
             <div>
-              <Label htmlFor="assigned_user" className="text-sm font-light text-[#41436A]">Content Owner</Label>
+              <Label htmlFor="assigned_user" className="text-xs sm:text-sm font-light text-[#41436A]">Content Owner</Label>
               <Input
                 id="assigned_user"
                 value={formData.assigned_user}
@@ -311,12 +311,12 @@ export default function MaterialModal({ material, topicId, onClose }) {
                   setFormData({ ...formData, assigned_user: e.target.value })
                 }
                 placeholder="Owner name"
-                className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
               />
             </div>
 
             <div>
-              <Label htmlFor="session_number" className="text-sm font-light text-[#41436A]">Session Number</Label>
+              <Label htmlFor="session_number" className="text-xs sm:text-sm font-light text-[#41436A]">Session Number</Label>
               <Input
                 id="session_number"
                 type="number"
@@ -325,12 +325,12 @@ export default function MaterialModal({ material, topicId, onClose }) {
                   setFormData({ ...formData, session_number: parseInt(e.target.value) })
                 }
                 placeholder="1"
-                className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
               />
             </div>
 
             <div>
-              <Label htmlFor="date_presented" className="text-sm font-light text-[#41436A]">Date Presented</Label>
+              <Label htmlFor="date_presented" className="text-xs sm:text-sm font-light text-[#41436A]">Date Presented</Label>
               <Input
                 id="date_presented"
                 type="date"
@@ -338,15 +338,15 @@ export default function MaterialModal({ material, topicId, onClose }) {
                 onChange={(e) =>
                   setFormData({ ...formData, date_presented: e.target.value })
                 }
-                className="mt-2 border-gray-300 rounded-none focus:border-[#F64668]"
+                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
               />
             </div>
 
-            <div className="col-span-2">
-              <Label className="text-sm font-light text-[#41436A]">Links</Label>
-              <div className="mt-2 space-y-2">
+            <div className="col-span-full">
+              <Label className="text-xs sm:text-sm font-light text-[#41436A]">Links</Label>
+              <div className="mt-1 sm:mt-2 space-y-2">
                 {(formData.links || []).map((lnk, idx) => (
-                  <div key={idx} className="grid grid-cols-5 gap-2 items-center">
+                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-start sm:items-center">
                     <Input
                       placeholder="https://example.com"
                       type="url"
@@ -482,11 +482,11 @@ export default function MaterialModal({ material, topicId, onClose }) {
             }}
           />
 
-          <div className="flex gap-3 justify-end pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end pt-4 sm:pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={requestCloseModal}
-              className="px-5 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-sm font-light"
+              className="px-3 sm:px-5 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs sm:text-sm font-light"
             >
               Cancel
             </button>

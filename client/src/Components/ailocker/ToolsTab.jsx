@@ -82,90 +82,93 @@ export default function ToolsTab({ isAdmin }) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-8">
-        <div className="flex items-center justify-between mb-6">
-          <motion.h2 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-2xl font-normal text-foreground"
-          >
-            Tools
-          </motion.h2>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedCategories(new Set())}
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-3 sm:p-6 lg:p-8 overflow-x-auto">
+        <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
+          <div className="flex items-center justify-between gap-2 min-w-max md:min-w-0">
+            <motion.h2 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="text-lg sm:text-xl lg:text-2xl font-normal text-foreground"
             >
-              Clear All
-            </Button>
-            <div className="flex items-center gap-2">
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search tools..."
-                className="border-gray-300 rounded-none"
-              />
-              <button
-                onClick={() => { /* noop - filtering is live */ }}
-                className="px-3 py-2 bg-[#41436A] text-white rounded"
-                title="Search tools"
+              Tools
+            </motion.h2>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedCategories(new Set())}
+                className="text-xs sm:text-sm"
               >
-                <Search className="w-4 h-4" strokeWidth={1.5} />
-              </button>
+                Clear All
+              </Button>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search..."
+                  className="border-gray-300 rounded-none text-xs sm:text-sm w-24 sm:w-48"
+                />
+                <button
+                  onClick={() => { /* noop - filtering is live */ }}
+                  className="px-2 sm:px-3 py-2 bg-[#41436A] text-white rounded flex-shrink-0"
+                  title="Search tools"
+                >
+                  <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Category pills */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 flex-wrap"
-        >
-          {filteredCategories.map((cat) => {
-            const checked = selectedCategories.has(cat._id);
-            return (
-              <motion.label
-                key={cat._id}
-                layout
-                className={`flex items-center gap-2 border rounded-lg px-3 py-2 text-sm transition-colors ${
-                  checked ? 'bg-primary-50 border-primary-200 text-primary-700' : 'bg-white hover:bg-gray-50'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => {
-                    setSelectedCategories((s) => {
-                      const copy = new Set(s);
-                      if (copy.has(cat._id)) copy.delete(cat._id);
-                      else copy.add(cat._id);
-                      return copy;
-                    });
-                  }}
-                  className="rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <span>{cat.name}</span>
-              </motion.label>
-            );
-          })}
-        </motion.div>
+          {/* Category pills */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 flex-wrap overflow-x-auto pb-2 sm:pb-0"
+          >
+            {filteredCategories.map((cat) => {
+              const checked = selectedCategories.has(cat._id);
+              return (
+                <motion.label
+                  key={cat._id}
+                  layout
+                  className={`flex items-center gap-2 border rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                    checked ? 'bg-primary-50 border-primary-200 text-primary-700' : 'bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      setSelectedCategories((s) => {
+                        const copy = new Set(s);
+                        if (copy.has(cat._id)) copy.delete(cat._id);
+                        else copy.add(cat._id);
+                        return copy;
+                      });
+                    }}
+                    className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
+                  />
+                  <span>{cat.name}</span>
+                </motion.label>
+              );
+            })}
+          </motion.div>
+        </div>
       </div>
 
-      <div className="p-8 space-y-12 overflow-y-auto">
+      <div className="p-3 sm:p-6 lg:p-8 space-y-6 sm:space-y-12 overflow-y-auto flex-1">
         <AnimatePresence mode="wait">
           {visibleCategories.length > 0 ? (
-            <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {visibleCategories.map((category) => {
-                const tools = toolsByCategory[category._id] || [];
-                const hiddenCount = Math.max(0, tools.length - 6);
-                const isExpanded = expandedCategories.has(category._id);
-                const visibleTools = isExpanded ? tools : tools.slice(0, 6);
-                const remainingCount = isExpanded ? hiddenCount : Math.max(0, tools.length - visibleTools.length);
-                return (
-                  <motion.div 
-                    key={category._id}
+            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                {visibleCategories.map((category) => {
+                  const tools = toolsByCategory[category._id] || [];
+                  const hiddenCount = Math.max(0, tools.length - 6);
+                  const isExpanded = expandedCategories.has(category._id);
+                  const visibleTools = isExpanded ? tools : tools.slice(0, 6);
+                  const remainingCount = isExpanded ? hiddenCount : Math.max(0, tools.length - visibleTools.length);
+                  return (
+                    <motion.div 
+                      key={category._id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
