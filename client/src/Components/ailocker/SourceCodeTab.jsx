@@ -47,15 +47,17 @@ export default function SourceCodeTab({ isAdmin }) {
       }
       try {
         const me = await base44.auth.me();
-        const perms = me?.permissions?.sourcecode;
+        const perms = me?.permissions;
         if (!cancelled) {
           if (perms && typeof perms === 'object') {
+            // Global permissions
             setCaps({
               add: !!perms.add,
               edit: !!perms.edit,
               delete: !!perms.delete,
             });
           } else {
+            // No granular perms => full access for admins
             setCaps({ add: true, edit: true, delete: true });
           }
         }
@@ -80,42 +82,42 @@ export default function SourceCodeTab({ isAdmin }) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-12">
-        <div className="flex items-center justify-between">
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-4 sm:p-8 lg:p-8 overflow-x-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
           <div>
-            <h2 className="text-3xl font-light text-[#41436A] mb-2">Source Code</h2>
-            <p className="text-gray-500 font-light">Repositories and source code links</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#41436A] mb-1 sm:mb-2">Source Code</h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-light">Repositories and source code links</p>
           </div>
 
-          <div className="w-64">
-            <div className="flex items-center gap-2">
+          <div className="w-full sm:w-64 flex-shrink-0">
+            <div className="flex items-center gap-2 justify-end">
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search repositories..."
-                className="border-gray-300 rounded-none"
+                className="h-8 px-3 border-gray-300 rounded-none text-xs sm:text-sm w-full"
               />
               <button
                 onClick={() => { /* noop - filtering is live */ }}
-                className="px-3 py-2 bg-[#41436A] text-white rounded"
+                className="px-2 sm:px-3 h-8 bg-[#41436A] text-white rounded flex-shrink-0 flex items-center justify-center"
                 title="Search repos"
               >
-                <Search className="w-4 h-4" strokeWidth={1.5} />
+                <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-12">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-12">
         {filteredRepos.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-400">
             <div className="text-center">
-              <p className="mb-4 font-light">No repositories found</p>
+              <p className="mb-4 font-light text-sm sm:text-base">No repositories found</p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 w-full">
             {filteredRepos.map((repo, index) => {
               const Icon = getPlatformIcon(repo.platform);
 
@@ -132,23 +134,23 @@ export default function SourceCodeTab({ isAdmin }) {
                     rel="noopener noreferrer"
                     className="block h-full group"
                   >
-                    <div className="h-full bg-white border border-gray-200 overflow-hidden hover:border-[#F64668] transition-all relative">
-                      <div className="bg-[#41436A] p-6 border-b border-[#41436A]/20 flex items-center gap-3">
-                        <Icon className="w-5 h-5 text-[#FE9677]" strokeWidth={1.5} />
+                    <div className="h-full bg-white border border-gray-200 overflow-hidden hover:border-[#41436A] transition-all relative">
+                      <div className="bg-[#41436A] p-3 sm:p-4 border-b border-[#41436A]/20 flex items-center gap-2">
+                        <Icon className="w-4 h-4 text-[#FE9677]" strokeWidth={1.5} />
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-light text-white truncate">
+                          <h3 className="text-sm sm:text-base font-light text-white truncate">
                             {repo.name}
                           </h3>
-                          <p className="text-xs text-white/70 capitalize font-light">
+                          <p className="text-[11px] text-white/70 capitalize font-light">
                             {repo.platform}
                           </p>
                         </div>
                         <ExternalLink className="w-4 h-4 text-white/50 group-hover:text-[#FE9677] transition-colors" strokeWidth={1.5} />
                       </div>
 
-                      <div className="p-6">
+                      <div className="p-4">
                         {repo.description && (
-                          <p className="text-sm text-gray-600 mb-4 line-clamp-3 font-light">
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2 font-light">
                             {repo.description}
                           </p>
                         )}
@@ -158,7 +160,7 @@ export default function SourceCodeTab({ isAdmin }) {
                             {repo.tags.map((tag, idx) => (
                               <span
                                 key={idx}
-                                className="px-2 py-1 bg-[#FE9677]/20 text-[#984063] text-xs font-light"
+                                className="px-2 py-0.5 bg-[#FE9677]/20 text-[#984063] text-sm font-light rounded"
                               >
                                 {tag}
                               </span>
@@ -167,7 +169,7 @@ export default function SourceCodeTab({ isAdmin }) {
                         )}
 
                         {isAdmin && (caps.edit || caps.delete) && (
-                          <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
+                          <div className="mt-4 pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
                             {caps.edit && (
                               <button
                                 type="button"
@@ -176,10 +178,10 @@ export default function SourceCodeTab({ isAdmin }) {
                                   e.stopPropagation();
                                   setEditingRepo(repo);
                                 }}
-                                className="px-3 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs font-light"
+                                className="p-1 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                                 title="Edit repository"
                               >
-                                <Edit2 className="w-3 h-3" strokeWidth={1.5} />
+                                <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                               </button>
                             )}
                             {caps.delete && (
@@ -191,10 +193,10 @@ export default function SourceCodeTab({ isAdmin }) {
                                   if (deleteMutation.isPending) return;
                                   setConfirmRepoDelete(repo);
                                 }}
-                                className="px-3 py-2 border border-gray-300 text-[#F64668] hover:bg-gray-50 transition-colors text-xs font-light"
+                                className="p-1 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                                 title="Delete repository"
                               >
-                                <Trash2 className="w-3 h-3" strokeWidth={1.5} />
+                                <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                               </button>
                             )}
                           </div>

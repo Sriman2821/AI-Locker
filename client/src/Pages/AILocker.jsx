@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, Code2, Settings, Wrench } from 'lucide-react';
+import { BookOpen, Code2, Wrench, User, LogOut, ShieldCheck, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LearningTab from '@/Components/ailocker/LearningTab';
 import ToolsTab from '@/Components/ailocker/ToolsTab';
@@ -29,6 +29,8 @@ function AILocker() {
   };
   // page-level search inputs are handled inside each tab for better UX
   const [showAccessManagement, setShowAccessManagement] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   
   console.log('AILocker: User state:', user);
 
@@ -36,6 +38,21 @@ function AILocker() {
   useEffect(() => {
     try { localStorage.setItem('ai_locker_active_tab', activeTab); } catch {}
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!showUserDropdown) return;
+    
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserDropdown]);
 
   const isLoggedIn = !!user;
   const isAdmin = user?.role === 'admin';
@@ -52,16 +69,16 @@ function AILocker() {
         :root {
           --color-primary: #41436A;
           --color-secondary: #984063;
-          --color-accent: #F64668;
+          --color-accent: #41436A;
           --color-highlight: #FE9677;
         }
       `}</style>
 
       {/* Minimalist Top Navigation */}
-      <nav className="flex-shrink-0 bg-[#41436A] border-b border-[#41436A]/20">
-        <div className="flex items-center justify-between px-12 py-6">
-          <div className="flex items-center gap-12">
-            <h1 className="text-2xl font-light text-white tracking-wide">AI Locker</h1>
+      <nav className="flex-shrink-0 bg-[#41436A] border-b border-[#41436A]/20 overflow-x-auto">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 py-3 sm:py-6 gap-4 min-w-max sm:min-w-0">
+          <div className="flex items-center gap-4 sm:gap-8 lg:gap-12 flex-shrink-0">
+            <h1 className="text-xl sm:text-2xl font-light text-white tracking-wide whitespace-nowrap">AI Locker</h1>
             
             <div className="flex gap-1">
               {tabs.map((tab) => {
@@ -71,8 +88,8 @@ function AILocker() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                      relative px-6 py-2 font-light transition-all duration-200
-                      flex items-center gap-2
+                      relative px-3 sm:px-6 py-2 font-light transition-all duration-200
+                      flex items-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm
                       ${
                         activeTab === tab.id
                           ? "text-white"
@@ -81,7 +98,7 @@ function AILocker() {
                     `}
                   >
                     <Icon className="w-4 h-4" strokeWidth={1.5} />
-                    {tab.label}
+                    <span className="hidden sm:inline">{tab.label}</span>
                     {activeTab === tab.id && (
                       <motion.div
                         layoutId="activeIndicator"
@@ -95,40 +112,54 @@ function AILocker() {
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            {/* per-page search inputs moved into each tab for consistency */}
-
-            {/* Access Management - Admin Only */}
-            {isAdmin && (
-              <button
-                onClick={() => setShowAccessManagement(true)}
-                className="text-white/50 hover:text-white transition-colors"
-                title="Access Management"
-              >
-                <Settings className="w-5 h-5" strokeWidth={1.5} />
-              </button>
-            )}
-
-            {/* User Info + Logout */}
+          <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
             {user && (
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-[#FE9677] rounded text-[#41436A] text-sm font-light">
-                  {user.full_name || user.name}
-                </div>
-
+              <div className="relative z-50" ref={dropdownRef}>
                 <button
-                  onClick={() => {
-                    logout();
-                    navigate('/login');
-                  }}
-                  className="ml-2 flex items-center justify-center px-3 py-2 bg-[#F64668] text-white rounded hover:bg-[#FE9677] transition-colors"
-                  title="Logout"
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  className="text-white/70 hover:text-white transition-colors flex items-center gap-2"
+                  title="User Menu"
                 >
-                  {/* Lucide logout icon */}
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-                  </svg>
+                  <User className="w-5 h-5" strokeWidth={1.5} />
+                  <span className="text-sm font-light">{user?.full_name || user?.name || 'User'}</span>
+                  <ChevronDown className="w-4 h-4" strokeWidth={1.5} />
                 </button>
+
+                {showUserDropdown && user && (
+                  <div className="fixed top-16 right-4 w-56 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-[9999]">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user?.full_name || user?.name || 'User'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {user?.role || 'user'}
+                      </p>
+                    </div>
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          setShowAccessManagement(true);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border-b border-gray-200"
+                      >
+                        <ShieldCheck className="w-4 h-4" strokeWidth={1.5} />
+                        <span>Access Management</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        logout();
+                        navigate('/login');
+                      }}
+                      className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" strokeWidth={1.5} />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

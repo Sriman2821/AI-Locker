@@ -9,29 +9,41 @@ import { Textarea } from "@/Components/ui/textarea";
 import { Label } from "@/Components/ui/label";
 
 export default function TopicModal({ topic, onClose }) {
-  const [formData, setFormData] = useState({
-    title: topic?.title || "",
-    description: topic?.description || "",
-    order: topic?.order || 0,
-  });
+   const [formData, setFormData] = useState({
+     title: topic?.title || "",
+     description: topic?.description || "",
+     order: topic?.order || 0,
+   });
+   const [errors, setErrors] = useState({});
 
-  const queryClient = useQueryClient();
+   const queryClient = useQueryClient();
 
-  const mutation = useMutation({
-    mutationFn: (data) =>
-      topic
-        ? base44.entities.Topic.update(topic.id, data)
-        : base44.entities.Topic.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["topics"]);
-      onClose();
-    },
-  });
+   const mutation = useMutation({
+     mutationFn: (data) =>
+       topic
+         ? base44.entities.Topic.update(topic.id, data)
+         : base44.entities.Topic.create(data),
+     onSuccess: () => {
+       queryClient.invalidateQueries(["topics"]);
+       onClose();
+     },
+   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    mutation.mutate(formData);
-  };
+   const validateForm = () => {
+     const newErrors = {};
+     if (!formData.title.trim()) {
+       newErrors.title = "Title is required";
+     }
+     setErrors(newErrors);
+     return Object.keys(newErrors).length === 0;
+   };
+
+   const handleSubmit = (e) => {
+     e.preventDefault();
+     if (validateForm()) {
+       mutation.mutate(formData);
+     }
+   };
 
   return (
     <motion.div
@@ -71,6 +83,7 @@ export default function TopicModal({ topic, onClose }) {
               required
               className="mt-2 border-gray-300 rounded-none"
             />
+            {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
           </div>
 
           <div>
@@ -98,7 +111,7 @@ export default function TopicModal({ topic, onClose }) {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="px-5 py-2 bg-[#984063] text-white hover:bg-[#F64668] transition-colors text-sm font-light"
+              className="px-5 py-2 bg-[#41436A] text-white  transition-colors text-sm font-light"
             >
               {mutation.isPending ? "Saving..." : topic ? "Update" : "Create"}
             </button>
