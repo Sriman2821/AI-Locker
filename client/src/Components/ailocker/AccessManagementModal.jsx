@@ -94,7 +94,7 @@ export default function AccessManagementModal({ onClose }) {
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
-        className="bg-white w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-lg sm:rounded-none flex flex-col"
+        className="bg-white max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

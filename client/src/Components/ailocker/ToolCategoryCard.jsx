@@ -22,12 +22,12 @@ const ToolCategoryCard = React.memo(({ tool }) => {
 
   return (
     <motion.div layout className="flex flex-col items-center text-center cursor-pointer" onClick={openTool} role="button" tabIndex={0}>
-      <div className="w-10 h-10 bg-[#F9E9EA] rounded flex items-center justify-center mb-1 border border-[#F0D6D9]">
+      <div className="w-12 h-12 bg-[#F9E9EA] rounded flex items-center justify-center mb-2 border border-[#F0D6D9]">
         {tool.url ? (
           <img 
             src={`https://www.google.com/s2/favicons?domain=${new URL(tool.url).hostname}&sz=32`}
             alt={`${tool.name} icon`}
-            className="w-4 h-4"
+            className="w-5 h-5"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = tool.icon_name ? null : "";
@@ -37,10 +37,10 @@ const ToolCategoryCard = React.memo(({ tool }) => {
                 '<svg class="w-5 h-5 text-[#D97783]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
             }}
           />
-          ) : tool.icon_name ? (
-          <span className="text-base text-[#D97783]">{tool.icon_name}</span>
+        ) : tool.icon_name ? (
+          <span className="text-lg text-[#D97783]">{tool.icon_name}</span>
         ) : (
-          <ExternalLink className="w-4 h-4 text-[#D97783]" />
+          <ExternalLink className="w-5 h-5 text-[#D97783]" />
         )}
       </div>
       <div className="text-sm text-gray-700 font-light">{tool.name}</div>

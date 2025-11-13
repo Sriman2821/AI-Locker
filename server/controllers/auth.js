@@ -3,30 +3,15 @@ import { generateToken } from '../middleware/auth.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
-// Helper to create a transporter. Prefer real SMTP from env vars; otherwise create a test account.
-async function createTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (host && user && pass) {
-    return nodemailer.createTransport({
-      host,
-      port: port || 587,
-      secure: port === 465, // true for 465, false for other ports
-      auth: { user, pass },
-    });
+// Create a test email transporter (replace with real SMTP in production)
+const transporter = nodemailer.createTransport({
+  host: 'smtp.ethereal.email',
+  port: 587,
+  auth: {
+    user: 'test@ethereal.email',
+    pass: 'testpassword'
   }
-
-  // No SMTP configured - create an Ethereal test account (transient)
-  const testAccount = await nodemailer.createTestAccount();
-  return nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: { user: testAccount.user, pass: testAccount.pass },
-  });
-}
+});
 
 export const authController = {
   // Register new user
@@ -137,60 +122,12 @@ export const authController = {
 
       // Send email
       const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-
-      // If BREVO_API_KEY is provided, send via Brevo (Sendinblue) transactional API
-      if (process.env.BREVO_API_KEY) {
-        try {
-          const brevoKey = process.env.BREVO_API_KEY;
-          const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.SMTP_USER || 'no-reply@example.com';
-          const senderName = process.env.BREVO_SENDER_NAME || 'AI Locker';
-
-          const brevoPayload = {
-            sender: { email: senderEmail, name: senderName },
-            to: [{ email: user.email, name: user.full_name || user.name || '' }],
-            subject: 'Password Reset Request',
-            htmlContent: `Please click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a>`,
-          };
-
-          const brevoResp = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'api-key': brevoKey,
-            },
-            body: JSON.stringify(brevoPayload),
-          });
-
-          const brevoJson = await brevoResp.json().catch(() => null);
-          console.log('Brevo send response status:', brevoResp.status, brevoJson || 'no-json');
-          // Return success to client regardless; Brevo response contains message id or error details
-        } catch (brevoErr) {
-          console.error('Brevo send error:', brevoErr);
-          // Fall back to SMTP transporter below
-          const activeTransporter = await createTransporter();
-          const info = await activeTransporter.sendMail({
-            to: user.email,
-            subject: 'Password Reset Request',
-            html: `Please click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a>`
-          });
-          const previewUrl = nodemailer.getTestMessageUrl(info);
-          if (previewUrl) console.log('Password reset email preview URL:', previewUrl);
-        }
-      } else {
-        // Create transporter at send time so we can fallback to a test account if SMTP is not configured
-        const activeTransporter = await createTransporter();
-        const info = await activeTransporter.sendMail({
-          to: user.email,
-          subject: 'Password Reset Request',
-          html: `Please click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a>`
-        });
-
-        // If using Ethereal test account, log a preview URL to the server console for debugging
-        const previewUrl = nodemailer.getTestMessageUrl(info);
-        if (previewUrl) {
-          console.log('Password reset email preview URL:', previewUrl);
-        }
-      }
+      
+      await transporter.sendMail({
+        to: user.email,
+        subject: 'Password Reset Request',
+        html: `Please click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a>`
+      });
 
       res.json({ message: 'Password reset email sent' });
     } catch (error) {

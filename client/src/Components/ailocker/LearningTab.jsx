@@ -134,7 +134,7 @@ export default function LearningTab({ isAdmin }) {
     <div className="h-full flex flex-col md:flex-row">
       {/* Left Panel - Topics */}
   <div className="w-full md:w-[22%] lg:w-[19%] border-r border-gray-200 bg-gray-50 flex flex-col">
-    <div className="flex-shrink-0 p-2 sm:p-3 lg:p-6 border-b border-gray-200 bg-white">
+        <div className="flex-shrink-0 p-3 sm:p-6 lg:p-8 border-b border-gray-200 bg-white">
           <div className="flex items-center justify-between mb-3 sm:mb-6">
             <h2 className="text-sm sm:text-base lg:text-lg font-light text-[#41436A]">Topics</h2>
             {isAdmin === true && (
@@ -150,19 +150,19 @@ export default function LearningTab({ isAdmin }) {
             )}
           </div>
           <div className="mt-2 sm:mt-3">
-            <div className="flex items-stretch gap-2">
+            <div className="flex items-center gap-2">
               <Input
                 value={topicSearch}
                 onChange={(e) => setTopicSearch(e.target.value)}
                 placeholder="Search topics..."
-                className="border-gray-300 rounded-none text-xs sm:text-sm h-10"
+                className="border-gray-300 rounded-none text-xs sm:text-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') e.preventDefault();
                 }}
               />
               <button
                 onClick={() => { /* noop - topicSearch updates filter live */ }}
-                className="px-3 bg-[#41436A] text-white rounded flex items-center justify-center flex-shrink-0"
+                className="px-3 py-2 bg-[#41436A] text-white rounded"
                 title="Search topics"
               >
                 <Search className="w-4 h-4" strokeWidth={1.5} />
@@ -171,7 +171,7 @@ export default function LearningTab({ isAdmin }) {
           </div>
         </div>
 
-  <div className="flex-1 overflow-y-auto p-2 sm:p-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
           {filteredTopics.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <p className="mb-4 font-light text-sm sm:text-base">No topics found</p>
@@ -184,7 +184,7 @@ export default function LearningTab({ isAdmin }) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className={`
-                    group relative p-2 sm:p-3 cursor-pointer transition-all
+                    group relative p-3 sm:p-5 cursor-pointer transition-all
                     ${
                       selectedTopic?.id === topic.id
                         ? "bg-white border-l-2 border-[#F64668]"
@@ -193,7 +193,7 @@ export default function LearningTab({ isAdmin }) {
                   `}
                   onClick={() => setSelectedTopic(topic)}
                 >
-                    <div className="flex items-start justify-between gap-3 sm:gap-4">
+                    <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-normal text-sm sm:text-base text-[#41436A] mb-1">{topic.title}</h3>
                       {topic.description && (
@@ -212,7 +212,7 @@ export default function LearningTab({ isAdmin }) {
                             setEditingTopic(topic);
                             setShowTopicModal(true);
                           }}
-                          className="p-1 sm:p-1 border border-gray-300 text-gray-500 transition-colors"
+                          className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                         >
                           <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                         </button>
@@ -225,7 +225,7 @@ export default function LearningTab({ isAdmin }) {
                               description: `Delete "${topic.title}"? This will remove all materials under this topic.`,
                             });
                           }}
-                          className="p-1 sm:p-1 border border-gray-300 text-gray-500 transition-colors"
+                          className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                         >
                           <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                         </button>
@@ -243,8 +243,8 @@ export default function LearningTab({ isAdmin }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {selectedTopic ? (
           <>
-            <div className="flex-shrink-0 p-2 sm:p-3 lg:p-5 border-b border-gray-200 bg-white overflow-y-auto max-h-48 sm:max-h-none">
-          <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="flex-shrink-0 p-4 sm:p-8 lg:p-7 border-b border-gray-200 bg-white overflow-y-auto max-h-48 sm:max-h-none">
+          <div className="flex items-start justify-between gap-4 sm:gap-6">
             <div className="flex-1 min-w-0">
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#41436A] mb-2 sm:mb-3">
                     {selectedTopic.title}
@@ -255,16 +255,16 @@ export default function LearningTab({ isAdmin }) {
                 </div>
 
                 <div className="w-full sm:w-64 ml-4 sm:ml-6">
-                  <div className="flex items-stretch gap-2 justify-end">
+                  <div className="flex items-center gap-2 justify-end">
                     <Input
                       value={materialSearch}
                       onChange={(e) => setMaterialSearch(e.target.value)}
                       placeholder="Search materials..."
-                      className="border-gray-300 rounded-none text-sm h-10"
+                      className="border-gray-300 rounded-none text-sm"
                     />
                     <button
                       onClick={() => { /* noop - materialSearch filters live */ }}
-                      className="px-2 sm:px-3 bg-[#41436A] text-white rounded flex items-center justify-center flex-shrink-0"
+                      className="px-2 sm:px-3 py-2 bg-[#41436A] text-white rounded flex-shrink-0"
                       title="Search materials"
                     >
                       <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
@@ -288,7 +288,7 @@ export default function LearningTab({ isAdmin }) {
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-6">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-12">
               {filteredMaterials.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center text-gray-400">

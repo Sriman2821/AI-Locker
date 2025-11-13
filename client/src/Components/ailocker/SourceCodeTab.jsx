@@ -80,24 +80,24 @@ export default function SourceCodeTab({ isAdmin }) {
 
   return (
     <div className="h-full flex flex-col">
-  <div className="flex-shrink-0 bg-white border-b border-gray-200 p-2 sm:p-3 lg:p-4 overflow-x-auto">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-4 sm:p-8 lg:p-12 overflow-x-auto">
+        <div className="flex flex-col gap-4 sm:gap-6">
           <div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#41436A] mb-1 sm:mb-0">Source Code</h2>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#41436A] mb-1 sm:mb-2">Source Code</h2>
             <p className="text-xs sm:text-sm text-gray-500 font-light">Repositories and source code links</p>
           </div>
 
-          <div className="w-full sm:w-64 mt-2 sm:mt-0">
-            <div className="flex items-stretch gap-2 justify-end">
+          <div className="w-full sm:w-64">
+            <div className="flex items-center gap-2">
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search repositories..."
-                className="border-gray-300 rounded-none text-xs sm:text-sm h-10"
+                className="border-gray-300 rounded-none text-xs sm:text-sm"
               />
               <button
                 onClick={() => { /* noop - filtering is live */ }}
-                className="px-2 sm:px-3 bg-[#41436A] text-white rounded flex items-center justify-center flex-shrink-0"
+                className="px-2 sm:px-3 py-2 bg-[#41436A] text-white rounded flex-shrink-0"
                 title="Search repos"
               >
                 <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
@@ -107,7 +107,7 @@ export default function SourceCodeTab({ isAdmin }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-6">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-12">
         {filteredRepos.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-400">
             <div className="text-center">
@@ -115,7 +115,7 @@ export default function SourceCodeTab({ isAdmin }) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 max-w-7xl mx-auto">
             {filteredRepos.map((repo, index) => {
               const Icon = getPlatformIcon(repo.platform);
 
@@ -133,7 +133,7 @@ export default function SourceCodeTab({ isAdmin }) {
                     className="block h-full group"
                   >
                     <div className="h-full bg-white border border-gray-200 overflow-hidden hover:border-[#F64668] transition-all relative">
-                      <div className="bg-[#41436A] p-2 sm:p-3 border-b border-[#41436A]/20 flex items-center gap-3">
+                      <div className="bg-[#41436A] p-6 border-b border-[#41436A]/20 flex items-center gap-3">
                         <Icon className="w-5 h-5 text-[#FE9677]" strokeWidth={1.5} />
                         <div className="flex-1 min-w-0">
                           <h3 className="text-base font-light text-white truncate">
@@ -146,7 +146,7 @@ export default function SourceCodeTab({ isAdmin }) {
                         <ExternalLink className="w-4 h-4 text-white/50 group-hover:text-[#FE9677] transition-colors" strokeWidth={1.5} />
                       </div>
 
-                      <div className="p-2 sm:p-3">
+                      <div className="p-6">
                         {repo.description && (
                           <p className="text-sm text-gray-600 mb-4 line-clamp-3 font-light">
                             {repo.description}
@@ -167,7 +167,7 @@ export default function SourceCodeTab({ isAdmin }) {
                         )}
 
                         {isAdmin && (caps.edit || caps.delete) && (
-                          <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-end gap-1">
+                          <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
                             {caps.edit && (
                               <button
                                 type="button"
@@ -176,7 +176,7 @@ export default function SourceCodeTab({ isAdmin }) {
                                   e.stopPropagation();
                                   setEditingRepo(repo);
                                 }}
-                                className="p-1 sm:p-1 border border-gray-300 text-gray-500 transition-colors"
+                                className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                                 title="Edit repository"
                               >
                                 <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
@@ -191,7 +191,7 @@ export default function SourceCodeTab({ isAdmin }) {
                                   if (deleteMutation.isPending) return;
                                   setConfirmRepoDelete(repo);
                                 }}
-                                className="p-1 sm:p-1 border border-gray-300 text-gray-500 transition-colors"
+                                className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
                                 title="Delete repository"
                               >
                                 <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />

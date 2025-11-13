@@ -82,7 +82,7 @@ export default function ToolsTab({ isAdmin }) {
 
   return (
     <div className="h-full flex flex-col">
-  <div className="flex-shrink-0 bg-white border-b border-gray-200 p-2 sm:p-3 lg:p-4 overflow-x-auto">
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-3 sm:p-6 lg:p-8 overflow-x-auto">
         <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
           <div className="flex items-center justify-between gap-2 min-w-max md:min-w-0">
             <motion.h2 
@@ -101,16 +101,16 @@ export default function ToolsTab({ isAdmin }) {
               >
                 Clear All
               </Button>
-              <div className="flex items-stretch gap-1 sm:gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search Tools..."
-                  className="border-gray-300 rounded-none text-xs sm:text-sm w-24 sm:w-48 h-10"
+                  placeholder="Search..."
+                  className="border-gray-300 rounded-none text-xs sm:text-sm w-24 sm:w-48"
                 />
                 <button
                   onClick={() => { /* noop - filtering is live */ }}
-                  className="px-2 sm:px-3 bg-[#41436A] text-white rounded flex items-center justify-center flex-shrink-0"
+                  className="px-2 sm:px-3 py-2 bg-[#41436A] text-white rounded flex-shrink-0"
                   title="Search tools"
                 >
                   <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
@@ -156,15 +156,15 @@ export default function ToolsTab({ isAdmin }) {
         </div>
       </div>
 
-      <div className="p-2 sm:p-3 lg:p-4 space-y-6 sm:space-y-12 overflow-y-auto flex-1">
+      <div className="p-3 sm:p-6 lg:p-8 space-y-6 sm:space-y-12 overflow-y-auto flex-1">
         <AnimatePresence mode="wait">
           {visibleCategories.length > 0 ? (
-            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                 {visibleCategories.map((category) => {
                   const tools = toolsByCategory[category._id] || [];
-                  const hiddenCount = Math.max(0, tools.length - 8);
+                  const hiddenCount = Math.max(0, tools.length - 6);
                   const isExpanded = expandedCategories.has(category._id);
-                  const visibleTools = isExpanded ? tools : tools.slice(0, 8);
+                  const visibleTools = isExpanded ? tools : tools.slice(0, 6);
                   const remainingCount = isExpanded ? hiddenCount : Math.max(0, tools.length - visibleTools.length);
                   return (
                     <motion.div 
@@ -172,20 +172,20 @@ export default function ToolsTab({ isAdmin }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="col-span-1 bg-white rounded-lg border flex flex-col min-h-[12rem]"
+                    className="col-span-1 bg-white rounded-lg border flex flex-col min-h-[16rem]"
                   >
                     {/* Header strip */}
-                    <div className="bg-[#3B3A5A] text-white px-4 py-3">
+                    <div className="bg-[#3B3A5A] text-white px-6 py-4">
                       <h2 className="text-lg font-normal">{category.name}</h2>
                     </div>
 
                     {/* Body */}
-                    <div className="p-3 flex-1">
+                    <div className="p-6 flex-1">
                       {tools.length > 0 ? (
                         <motion.div 
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="grid grid-cols-4 gap-4 items-start"
+                          className="grid grid-cols-3 gap-8 items-start"
                         >
                           {visibleTools.map((tool) => (
                             <motion.div key={tool._id} layout className="col-span-1 flex justify-center">
@@ -200,8 +200,8 @@ export default function ToolsTab({ isAdmin }) {
                           </div>
                         </div>
                       )}
-                          {hiddenCount > 0 && (
-                          <div className="mt-4 flex justify-center">
+                        {hiddenCount > 0 && (
+                          <div className="mt-6 flex justify-center">
                             <Button
                               variant="ghost"
                               size="sm"
