@@ -47,7 +47,8 @@ export const adminMiddleware = (req, res, next) => {
 };
 
 // Capability checker: if user has explicit permissions, enforce them; otherwise admins get full access
-export const requireCapability = (resource, action) => {
+// Now uses global permissions (add, edit, delete) instead of resource-specific ones
+export const requireCapability = (action) => {
   return (req, res, next) => {
     const user = req.user;
     if (!user || user.role !== 'admin') {
@@ -58,9 +59,9 @@ export const requireCapability = (resource, action) => {
       // No granular perms configured: full access
       return next();
     }
-    const allowed = !!(perms?.[resource]?.[action]);
+    const allowed = !!perms[action];
     if (!allowed) {
-      return res.status(403).json({ message: `Permission denied: ${resource}.${action}` });
+      return res.status(403).json({ message: `Permission denied: ${action}` });
     }
     next();
   };

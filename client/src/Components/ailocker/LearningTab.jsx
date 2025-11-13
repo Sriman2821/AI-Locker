@@ -31,6 +31,7 @@ export default function LearningTab({ isAdmin }) {
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [localMaterials, setLocalMaterials] = useState(null);
   const [materialCaps, setMaterialCaps] = useState({ add: !!isAdmin, edit: !!isAdmin, delete: !!isAdmin });
+  const [topicCaps, setTopicCaps] = useState({ add: !!isAdmin, edit: !!isAdmin, delete: !!isAdmin });
 
   const queryClient = useQueryClient();
 
@@ -58,32 +59,40 @@ export default function LearningTab({ isAdmin }) {
 
   // Order updates disabled (drag-drop removed)
 
-  // Load current user's material capabilities
+  // Load current user's capabilities (global permissions)
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       if (!isAdmin) {
-        if (!cancelled) setMaterialCaps({ add: false, edit: false, delete: false });
+        if (!cancelled) {
+          setMaterialCaps({ add: false, edit: false, delete: false });
+          setTopicCaps({ add: false, edit: false, delete: false });
+        }
         return;
       }
       try {
         const me = await base44.auth.me();
-        const perms = me?.permissions?.materials;
+        const perms = me?.permissions;
         if (!cancelled) {
           if (perms && typeof perms === 'object') {
-            setMaterialCaps({
+            // Global permissions: add, edit, delete
+            const caps = {
               add: !!perms.add,
               edit: !!perms.edit,
               delete: !!perms.delete,
-            });
+            };
+            setMaterialCaps(caps);
+            setTopicCaps(caps);
           } else {
             // No granular perms configured => full access for admins
             setMaterialCaps({ add: true, edit: true, delete: true });
+            setTopicCaps({ add: true, edit: true, delete: true });
           }
         }
       } catch {
         if (!cancelled) {
           setMaterialCaps({ add: !!isAdmin, edit: !!isAdmin, delete: !!isAdmin });
+          setTopicCaps({ add: !!isAdmin, edit: !!isAdmin, delete: !!isAdmin });
         }
       }
     };
@@ -137,7 +146,7 @@ export default function LearningTab({ isAdmin }) {
         <div className="flex-shrink-0 p-3 sm:p-6 lg:p-8 border-b border-gray-200 bg-white">
           <div className="flex items-center justify-between mb-3 sm:mb-6">
             <h2 className="text-sm sm:text-base lg:text-lg font-light text-[#41436A]">Topics</h2>
-            {isAdmin === true && (
+            {isAdmin && topicCaps.add && (
               <button
                 onClick={() => {
                   setEditingTopic(null);
@@ -149,20 +158,20 @@ export default function LearningTab({ isAdmin }) {
               </button>
             )}
           </div>
-          <div className="mt-2 sm:mt-3">
-            <div className="flex items-center gap-2">
+            <div className="mt-2 sm:mt-3">
+            <div className="flex items-center gap-2 w-full sm:w-64 ml-auto">
               <Input
                 value={topicSearch}
                 onChange={(e) => setTopicSearch(e.target.value)}
                 placeholder="Search topics..."
-                className="border-gray-300 rounded-none text-xs sm:text-sm"
+                className="h-8 px-3 border-gray-300 rounded-none text-xs sm:text-sm w-full"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') e.preventDefault();
                 }}
               />
               <button
                 onClick={() => { /* noop - topicSearch updates filter live */ }}
-                className="px-3 py-2 bg-[#41436A] text-white rounded"
+                className="px-3 h-8 bg-[#41436A] text-white rounded flex items-center justify-center"
                 title="Search topics"
               >
                 <Search className="w-4 h-4" strokeWidth={1.5} />
@@ -187,7 +196,7 @@ export default function LearningTab({ isAdmin }) {
                     group relative p-3 sm:p-5 cursor-pointer transition-all
                     ${
                       selectedTopic?.id === topic.id
-                        ? "bg-white border-l-2 border-[#F64668]"
+                        ? "bg-white border-l-2 border-[#41436A]"
                         : "hover:bg-white"
                     }
                   `}
@@ -195,40 +204,44 @@ export default function LearningTab({ isAdmin }) {
                 >
                     <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-normal text-sm sm:text-base text-[#41436A] mb-1">{topic.title}</h3>
+                      <h3 title={topic.title} className="font-normal text-base sm:text-lg text-[#41436A] mb-1 truncate">{topic.title}</h3>
                       {topic.description && (
                         <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 font-light">
                           {topic.description}
                         </p>
                       )}
                     </div>
-                    {isAdmin === true && (
+                    {isAdmin === true && (topicCaps.edit || topicCaps.delete) && (
                       <div
                         className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <button
-                          onClick={() => {
-                            setEditingTopic(topic);
-                            setShowTopicModal(true);
-                          }}
-                          className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
-                        >
-                          <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setConfirmAction({
-                              type: "delete-topic",
-                              id: topic.id,
-                              title: "Delete topic",
-                              description: `Delete "${topic.title}"? This will remove all materials under this topic.`,
-                            });
-                          }}
-                          className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
-                        >
-                          <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
-                        </button>
+                        {topicCaps.edit && (
+                          <button
+                            onClick={() => {
+                              setEditingTopic(topic);
+                              setShowTopicModal(true);
+                            }}
+                            className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
+                          >
+                            <Edit2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
+                          </button>
+                        )}
+                        {topicCaps.delete && (
+                          <button
+                            onClick={() => {
+                              setConfirmAction({
+                                type: "delete-topic",
+                                id: topic.id,
+                                title: "Delete topic",
+                                description: `Delete "${topic.title}"? This will remove all materials under this topic.`,
+                              });
+                            }}
+                            className="p-1 sm:p-2 border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
+                          >
+                            <Trash2 className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
+                          </button>
+                        )}
                        </div>
                      )}
                    </div>
@@ -243,7 +256,7 @@ export default function LearningTab({ isAdmin }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {selectedTopic ? (
           <>
-            <div className="flex-shrink-0 p-4 sm:p-8 lg:p-7 border-b border-gray-200 bg-white overflow-y-auto max-h-48 sm:max-h-none">
+            <div className="flex-shrink-0 p-4 sm:p-8 lg:p-6 border-b border-gray-200 bg-white overflow-y-auto max-h-48 sm:max-h-none">
           <div className="flex items-start justify-between gap-4 sm:gap-6">
             <div className="flex-1 min-w-0">
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#41436A] mb-2 sm:mb-3">
@@ -260,11 +273,11 @@ export default function LearningTab({ isAdmin }) {
                       value={materialSearch}
                       onChange={(e) => setMaterialSearch(e.target.value)}
                       placeholder="Search materials..."
-                      className="border-gray-300 rounded-none text-sm"
+                      className="h-8 px-3 border-gray-300 rounded-none text-sm w-full"
                     />
                     <button
                       onClick={() => { /* noop - materialSearch filters live */ }}
-                      className="px-2 sm:px-3 py-2 bg-[#41436A] text-white rounded flex-shrink-0"
+                      className="px-2 sm:px-3 h-8 bg-[#41436A] text-white rounded flex-shrink-0 flex items-center justify-center"
                       title="Search materials"
                     >
                       <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
@@ -280,7 +293,7 @@ export default function LearningTab({ isAdmin }) {
                       setEditingMaterial(null);
                       setShowMaterialModal(true);
                     }}
-                    className="px-5 py-2 border border-[#984063] text-[#984063] hover:bg-[#984063] hover:text-white transition-all text-sm font-light"
+                    className="px-5 py-2 border border-[#41436A] text-[#41436A] hover:bg-[#41436A] hover:text-white transition-all text-sm font-light"
                   >
                     Add Material
                   </button>

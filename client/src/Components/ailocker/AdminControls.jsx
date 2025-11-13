@@ -19,7 +19,7 @@ export default function AdminControls({ activeTab }) {
         {activeTab === "tools" && (
           <button
             onClick={() => setShowManageTools(true)}
-            className="w-12 h-12 bg-[#984063] text-white hover:bg-[#F64668] transition-all flex items-center justify-center"
+            className="w-12 h-12 bg-[#41436A] text-white transition-all flex items-center justify-center"
             title="Manage Tools & Categories"
           >
             <FolderCog className="w-5 h-5" strokeWidth={1.5} />
@@ -29,7 +29,7 @@ export default function AdminControls({ activeTab }) {
         {activeTab === "sourcecode" && (
           <button
             onClick={() => setShowAddSourceCode(true)}
-            className="w-12 h-12 bg-[#984063] text-white hover:bg-[#F64668] transition-all flex items-center justify-center"
+            className="w-12 h-12 bg-[#41436A] text-white transition-all flex items-center justify-center"
             title="Add Repository"
           >
             <Plus className="w-5 h-5" strokeWidth={1.5} />

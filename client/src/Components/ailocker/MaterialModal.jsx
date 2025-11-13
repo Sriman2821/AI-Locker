@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/productionClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Upload, Image as ImageIcon, Video, FileText, FileSpreadsheet, Presentation } from "lucide-react";
+import { X, Upload, Image as ImageIcon, Video, FileText, FileSpreadsheet, Presentation, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
@@ -38,6 +38,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
   const [uploadedFileName, setUploadedFileName] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [errors, setErrors] = useState({});
   const initialSnapshotRef = useRef(null);
 
   const queryClient = useQueryClient();
@@ -50,6 +51,22 @@ export default function MaterialModal({ material, topicId, onClose }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["materials", topicId] });
       queryClient.invalidateQueries({ queryKey: ["materials"] });
+      // Update the saved snapshot so the form is no longer considered dirty
+      try {
+        // Use the same normalization as buildPayload (ignore empty links/files)
+        initialSnapshotRef.current = JSON.stringify({
+          title: formData.title || "",
+          description: formData.description || "",
+          assigned_user: formData.assigned_user || "",
+          session_number: formData.session_number || "",
+          date_presented: formData.date_presented || "",
+          links: (formData.links || []).filter(l => l && l.url && String(l.url).trim()).map(l => ({ url: l.url || "", name: l.name || "" })),
+          files: (formData.files || []).filter(f => f && f.url).map(f => ({ url: f.url || "", name: f.name || "", type: f.type || "" })),
+        });
+      } catch (e) {
+        // ignore snapshot update errors
+      }
+      setIsDirty(false);
       onClose();
     },
   });
@@ -77,8 +94,9 @@ export default function MaterialModal({ material, topicId, onClose }) {
       assigned_user: formData.assigned_user,
       session_number: formData.session_number,
       date_presented: formData.date_presented,
-      links: (formData.links || []).map(l => ({ url: l.url || "", name: l.name || "" })),
-      files: (formData.files || []).map(f => ({ url: f.url || "", name: f.name || "", type: f.type || "" })),
+      // treat empty links (no url) as not a real change
+      links: (formData.links || []).filter(l => l && l.url && String(l.url).trim()).map(l => ({ url: l.url || "", name: l.name || "" })),
+      files: (formData.files || []).filter(f => f && f.url).map(f => ({ url: f.url || "", name: f.name || "", type: f.type || "" })),
     });
     setIsDirty(initialSnapshotRef.current !== current);
   }, [formData]);
@@ -197,16 +215,49 @@ export default function MaterialModal({ material, topicId, onClose }) {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Require type selection for each uploaded file
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.title.trim()) {
+      newErrors.title = "Title is required";
+    }
+    // Validate links URLs
+    const invalidLinks = (formData.links || []).filter(link => link.url && !isValidUrl(link.url));
+    if (invalidLinks.length > 0) {
+      newErrors.links = "Please enter valid URLs for all links";
+    }
+    // Check file types
     const untypedFile = (formData.files || []).find(f => !f.type);
     if (untypedFile) {
-      alert("Please choose a file type for each uploaded file.");
-      return;
+      newErrors.files = "Please choose a file type for each uploaded file";
     }
-    const payload = buildPayload();
-    mutation.mutate(payload);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const isValidUrl = (string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateForm()) {
+      const payload = buildPayload();
+      mutation.mutate(payload);
+    }
+  };
+
+  // Ensure Update button always attempts to save current edits
+  const handleUpdate = () => {
+    // run validation and save regardless of dirty state
+    if (validateForm()) {
+      const payload = buildPayload();
+      mutation.mutate(payload);
+    }
   };
 
   const getFileTypeIcon = (fileType) => {
@@ -260,7 +311,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
         className="bg-white max-w-4xl w-full max-h-[95vh] overflow-y-auto rounded-lg sm:rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-[#41436A] p-4 sm:p-8 flex items-center justify-between">
+        <div className="sticky top-0 bg-[#41436A] p-3 sm:p-4 flex items-center justify-between">
           <h2 className="text-lg sm:text-2xl font-light text-white">
             {material ? "Edit Material" : "Add Material"}
           </h2>
@@ -272,8 +323,8 @@ export default function MaterialModal({ material, topicId, onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <div className="col-span-full">
               <Label htmlFor="title" className="text-xs sm:text-sm font-light text-[#41436A]">Title</Label>
               <Input
@@ -282,8 +333,9 @@ export default function MaterialModal({ material, topicId, onClose }) {
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Material title"
                 required
-                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
+                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm"
               />
+              {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
             </div>
 
             <div className="col-span-full">
@@ -296,7 +348,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
                 }
                 placeholder="Material description"
                 rows={2}
-                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
+                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm"
               />
             </div>
 
@@ -311,7 +363,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
                   setFormData({ ...formData, assigned_user: e.target.value })
                 }
                 placeholder="Author name"
-                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
+                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm"
               />
             </div>
 
@@ -325,7 +377,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
                   setFormData({ ...formData, session_number: parseInt(e.target.value) })
                 }
                 placeholder="1"
-                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
+                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm"
               />
             </div>
 
@@ -338,45 +390,47 @@ export default function MaterialModal({ material, topicId, onClose }) {
                 onChange={(e) =>
                   setFormData({ ...formData, date_presented: e.target.value })
                 }
-                className="mt-1 sm:mt-2 border-gray-300 rounded-none focus:border-[#F64668] text-sm"
+                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm"
               />
             </div>
 
-            <div className="col-span-full">
+              <div className="col-span-full">
               <Label className="text-xs sm:text-sm font-light text-[#41436A]">Links</Label>
-              <div className="mt-1 sm:mt-2 space-y-2">
+              <div className="mt-1 space-y-2">
                 {(formData.links || []).map((lnk, idx) => (
                   <div key={idx} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-start sm:items-center">
                     <Input
                       placeholder="https://example.com"
-                      type="url"
                       value={lnk.url || ""}
                       onChange={(e) => updateLink(idx, "url", e.target.value)}
-                      className="col-span-4 border-gray-300 rounded-none focus:border-[#F64668]"
+                      className="col-span-4 border-gray-300 rounded-none focus:border-[#41436A]"
                     />
                     <button
                       type="button"
                       onClick={() => requestRemoveLink(idx)}
-                      className="text-xs text-[#F64668] hover:text-[#984063] justify-self-start"
+                      className="text-xs text-[#41436A] hover:text-[#984063] justify-self-start"
+                      title="Remove link"
+                      aria-label="Remove link"
                     >
-                      Remove
+                      <Trash2 className="w-4 h-4 text-[#984063]" />
                     </button>
                   </div>
                 ))}
                 <button
                   type="button"
                   onClick={addEmptyLink}
-                  className="px-3 py-1 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs font-light"
+                  className="px-2 py-1 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs font-light"
                 >
                   Add link
                 </button>
+                {errors.links && <p className="text-sm text-red-500 mt-1">{errors.links}</p>}
               </div>
             </div>
 
             <div className="col-span-2">
               <Label className="text-sm font-light text-[#41436A]">Upload Files</Label>
-              <div className="mt-2">
-                <label className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 hover:border-[#F64668] cursor-pointer transition-colors">
+              <div className="mt-1">
+                <label className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 hover:border-[#41436A] cursor-pointer transition-colors">
                   <Upload className="w-4 h-4 text-[#984063]" strokeWidth={1.5} />
                   <span className="text-sm text-[#41436A] font-light">
                     {uploading ? "Uploading..." : "Choose file(s)"}
@@ -390,12 +444,13 @@ export default function MaterialModal({ material, topicId, onClose }) {
                     disabled={uploading}
                   />
                 </label>
+                {errors.files && <p className="text-sm text-red-500 mt-1">{errors.files}</p>}
                 {(formData.files?.length > 0) && (
-                  <div className="mt-2 border border-dashed border-gray-300">
+                  <div className="mt-1 border border-dashed border-gray-300">
                     {formData.files.map((f, idx) => {
                       const Icon = getFileTypeIcon(f.type || "file");
                       return (
-                        <div key={idx} className="grid grid-cols-12 gap-3 items-center px-4 py-2 bg-gray-50 border-b last:border-b-0">
+                        <div key={idx} className="grid grid-cols-12 gap-2 items-center px-3 py-1 bg-gray-50 border-b last:border-b-0">
                           <div className="col-span-6 flex items-center gap-2 min-w-0">
                             <Icon className="w-4 h-4 text-[#984063] shrink-0" strokeWidth={1.5} />
                             <span className="text-xs text-[#41436A] font-light truncate">
@@ -408,37 +463,37 @@ export default function MaterialModal({ material, topicId, onClose }) {
                               value={f.type || undefined}
                               onValueChange={(value) => updateFileType(idx, value)}
                             >
-                              <SelectTrigger className="border-gray-300 rounded-none h-8">
+                              <SelectTrigger className="border-gray-300 rounded-none h-7">
                                 <SelectValue placeholder="File type" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="image">
                                   <div className="flex items-center gap-2">
-                                    <ImageIcon className="w-3 h-3" strokeWidth={1.5} />
+                                    <ImageIcon className="w-3 h-3 text-[#984063]" strokeWidth={1.5} />
                                     <span>Image</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="video">
                                   <div className="flex items-center gap-2">
-                                    <Video className="w-3 h-3" strokeWidth={1.5} />
+                                    <Video className="w-3 h-3 text-[#984063]" strokeWidth={1.5} />
                                     <span>Video</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="doc">
                                   <div className="flex items-center gap-2">
-                                    <FileText className="w-3 h-3" strokeWidth={1.5} />
+                                    <FileText className="w-3 h-3 text-[#984063]" strokeWidth={1.5} />
                                     <span>Document</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="sheet">
                                   <div className="flex items-center gap-2">
-                                    <FileSpreadsheet className="w-3 h-3" strokeWidth={1.5} />
+                                    <FileSpreadsheet className="w-3 h-3 text-[#984063]" strokeWidth={1.5} />
                                     <span>Spreadsheet</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="slide">
                                   <div className="flex items-center gap-2">
-                                    <Presentation className="w-3 h-3" strokeWidth={1.5} />
+                                    <Presentation className="w-3 h-3 text-[#984063]" strokeWidth={1.5} />
                                     <span>Presentation</span>
                                   </div>
                                 </SelectItem>
@@ -448,10 +503,12 @@ export default function MaterialModal({ material, topicId, onClose }) {
                           <div className="col-span-2 flex justify-end">
                             <button
                               type="button"
-                          onClick={() => requestRemoveUploadedFile(idx)}
-                              className="text-xs text-[#F64668] hover:text-[#984063]"
+                              onClick={() => requestRemoveUploadedFile(idx)}
+                              className="text-xs text-[#41436A] hover:text-[#984063] flex items-center justify-center"
+                              title="Remove file"
+                              aria-label="Remove file"
                             >
-                              Remove
+                              <Trash2 className="w-4 h-4 text-[#984063]" />
                             </button>
                           </div>
                         </div>
@@ -482,7 +539,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
             }}
           />
 
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end pt-4 sm:pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end pt-3 sm:pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={requestCloseModal}
@@ -491,9 +548,10 @@ export default function MaterialModal({ material, topicId, onClose }) {
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleUpdate}
               disabled={mutation.isPending || uploading}
-              className="px-5 py-2 bg-[#984063] text-white hover:bg-[#F64668] transition-colors text-sm font-light"
+              className="px-5 py-2 bg-[#41436A] text-white transition-colors text-sm font-light"
             >
               {mutation.isPending ? "Saving..." : material ? "Update" : "Add"}
             </button>

@@ -241,7 +241,7 @@ app.get('/api/topics', async (req, res) => {
   }
 });
 
-app.post('/api/topics', async (req, res) => {
+app.post('/api/topics', authMiddleware, requireCapability('add'), async (req, res) => {
   try {
     const topic = new Topic(req.body);
     await topic.save();
@@ -251,7 +251,7 @@ app.post('/api/topics', async (req, res) => {
   }
 });
 
-app.put('/api/topics/:id', async (req, res) => {
+app.put('/api/topics/:id', authMiddleware, requireCapability('edit'), async (req, res) => {
   try {
     const topic = await Topic.findByIdAndUpdate(
       req.params.id,
@@ -270,7 +270,7 @@ app.put('/api/topics/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/topics/:id', async (req, res) => {
+app.delete('/api/topics/:id', authMiddleware, requireCapability('delete'), async (req, res) => {
   try {
     const topic = await Topic.findByIdAndDelete(req.params.id);
     if (!topic) {
@@ -330,7 +330,7 @@ app.get('/api/materials', async (req, res) => {
   }
 });
 
-app.post('/api/materials', authMiddleware, requireCapability('materials', 'add'), async (req, res) => {
+app.post('/api/materials', authMiddleware, requireCapability('add'), async (req, res) => {
   try {
     const body = req.body || {};
     // Ensure newest material appears first when sorting by ascending 'order'
@@ -351,7 +351,7 @@ app.post('/api/materials', authMiddleware, requireCapability('materials', 'add')
   }
 });
 
-app.put('/api/materials/:id', authMiddleware, requireCapability('materials', 'edit'), async (req, res) => {
+app.put('/api/materials/:id', authMiddleware, requireCapability('edit'), async (req, res) => {
   try {
     const material = await Material.findByIdAndUpdate(
       req.params.id,
@@ -370,7 +370,7 @@ app.put('/api/materials/:id', authMiddleware, requireCapability('materials', 'ed
   }
 });
 
-app.delete('/api/materials/:id', authMiddleware, requireCapability('materials', 'delete'), async (req, res) => {
+app.delete('/api/materials/:id', authMiddleware, requireCapability('delete'), async (req, res) => {
   try {
     const material = await Material.findByIdAndDelete(req.params.id);
     if (!material) {
@@ -397,7 +397,7 @@ app.get('/api/tool-categories', async (req, res) => {
 });
 
 // Creating/updating/deleting categories require tools.manage capability; map to tools.add/edit/delete respectively
-app.post('/api/tool-categories', authMiddleware, requireCapability('tools', 'add'), async (req, res) => {
+app.post('/api/tool-categories', authMiddleware, requireCapability('add'), async (req, res) => {
   try {
     const category = new ToolCategory(req.body);
     await category.save();
@@ -408,7 +408,7 @@ app.post('/api/tool-categories', authMiddleware, requireCapability('tools', 'add
   }
 });
 
-app.put('/api/tool-categories/:id', authMiddleware, requireCapability('tools', 'edit'), async (req, res) => {
+app.put('/api/tool-categories/:id', authMiddleware, requireCapability('edit'), async (req, res) => {
   try {
     const category = await ToolCategory.findByIdAndUpdate(
       req.params.id,
@@ -425,7 +425,7 @@ app.put('/api/tool-categories/:id', authMiddleware, requireCapability('tools', '
   }
 });
 
-app.delete('/api/tool-categories/:id', authMiddleware, requireCapability('tools', 'delete'), async (req, res) => {
+app.delete('/api/tool-categories/:id', authMiddleware, requireCapability('delete'), async (req, res) => {
   try {
     const category = await ToolCategory.findByIdAndDelete(req.params.id);
     if (!category) {
@@ -455,7 +455,7 @@ app.get('/api/tools', async (req, res) => {
   }
 });
 
-app.post('/api/tools', authMiddleware, requireCapability('tools', 'add'), async (req, res) => {
+app.post('/api/tools', authMiddleware, requireCapability('add'), async (req, res) => {
   try {
     const tool = new Tool(req.body);
     await tool.save();
@@ -467,7 +467,7 @@ app.post('/api/tools', authMiddleware, requireCapability('tools', 'add'), async 
   }
 });
 
-app.put('/api/tools/:id', authMiddleware, requireCapability('tools', 'edit'), async (req, res) => {
+app.put('/api/tools/:id', authMiddleware, requireCapability('edit'), async (req, res) => {
   try {
     const tool = await Tool.findByIdAndUpdate(
       req.params.id,
@@ -484,7 +484,7 @@ app.put('/api/tools/:id', authMiddleware, requireCapability('tools', 'edit'), as
   }
 });
 
-app.delete('/api/tools/:id', authMiddleware, requireCapability('tools', 'delete'), async (req, res) => {
+app.delete('/api/tools/:id', authMiddleware, requireCapability('delete'), async (req, res) => {
   try {
     const tool = await Tool.findByIdAndDelete(req.params.id);
     if (!tool) {
@@ -533,7 +533,7 @@ app.get('/api/source-code/search', async (req, res) => {
   }
 });
 
-app.post('/api/source-code', authMiddleware, requireCapability('sourcecode', 'add'), async (req, res) => {
+app.post('/api/source-code', authMiddleware, requireCapability('add'), async (req, res) => {
   try {
     const repo = new SourceCode(req.body);
     await repo.save();
@@ -544,7 +544,7 @@ app.post('/api/source-code', authMiddleware, requireCapability('sourcecode', 'ad
   }
 });
 
-app.put('/api/source-code/:id', authMiddleware, requireCapability('sourcecode', 'edit'), async (req, res) => {
+app.put('/api/source-code/:id', authMiddleware, requireCapability('edit'), async (req, res) => {
   try {
     const repo = await SourceCode.findByIdAndUpdate(
       req.params.id,
@@ -563,7 +563,7 @@ app.put('/api/source-code/:id', authMiddleware, requireCapability('sourcecode', 
   }
 });
 
-app.delete('/api/source-code/:id', authMiddleware, requireCapability('sourcecode', 'delete'), async (req, res) => {
+app.delete('/api/source-code/:id', authMiddleware, requireCapability('delete'), async (req, res) => {
   try {
     const repo = await SourceCode.findByIdAndDelete(req.params.id);
     if (!repo) {

@@ -40,7 +40,7 @@ export default function ConfirmModal({ open, title = "Confirm", description = ""
               onClick={() => {
                 if (typeof onConfirm === "function") onConfirm();
               }}
-              className="px-4 py-2 bg-[#984063] text-white rounded text-sm hover:bg-[#F64668] transition font-light"
+              className="px-4 py-2 bg-[#41436A] text-white rounded text-sm transition font-light"
             >
               {confirmLabel}
             </button>
