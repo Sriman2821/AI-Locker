@@ -8,6 +8,7 @@ services:
     region: oregon
     plan: free
     branch: main
+    rootDir: server
     buildCommand: npm install
     startCommand: npm start
     envVars:
