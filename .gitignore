@@ -12,6 +12,21 @@ dist
 dist-ssr
 *.local
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+client/.env
+server/.env
+
+# Keep example files
+!.env.example
+!.env.production
+
+# Uploads (user-generated files)
+server/uploads/*
+!server/uploads/.gitkeep
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +37,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Railway
+.railway
+
+# Vercel
+.vercel

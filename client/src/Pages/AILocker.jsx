@@ -59,12 +59,12 @@ function AILocker() {
 
   const tabs = [
     { id: "learning", label: "Learning", icon: BookOpen },
-    { id: "tools", label: "Tools", icon: Wrench },
+    { id: "tools", label: "Categories & Tools", icon: Wrench },
     { id: "sourcecode", label: "Source Code", icon: Code2 },
   ];
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-white">
+    <div className="min-h-screen w-full flex flex-col bg-white">
       <style>{`
         :root {
           --color-primary: #41436A;
@@ -115,18 +115,20 @@ function AILocker() {
           <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
             {user && (
               <div className="relative z-50" ref={dropdownRef}>
-                <button
-                  onClick={() => setShowUserDropdown(!showUserDropdown)}
-                  className="text-white/70 hover:text-white transition-colors flex items-center gap-2"
-                  title="User Menu"
-                >
-                  <User className="w-5 h-5" strokeWidth={1.5} />
-                  <span className="text-sm font-light">{user?.full_name || user?.name || 'User'}</span>
-                  <ChevronDown className="w-4 h-4" strokeWidth={1.5} />
-                </button>
+                <div>
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className="text-white/70 hover:text-white transition-colors flex items-center gap-2"
+                    title="User Menu"
+                  >
+                    <User className="w-5 h-5" strokeWidth={1.5} title="" />
+                    <span className="text-sm font-light" title="">{user?.full_name || user?.name || 'User'}</span>
+                    <ChevronDown className="w-4 h-4" strokeWidth={1.5} title="" />
+                  </button>
+                </div>
 
                 {showUserDropdown && user && (
-                  <div className="fixed top-16 right-4 w-56 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-[9999]">
+                  <div className="fixed top-16 right-2 sm:right-4 w-56 max-w-xs bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-[9999]">
                     <div className="px-4 py-3 border-b border-gray-200">
                       <p className="text-sm font-medium text-gray-900">
                         {user?.full_name || user?.name || 'User'}
@@ -167,7 +169,7 @@ function AILocker() {
       </nav>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-auto relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

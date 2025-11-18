@@ -3,11 +3,14 @@ import { Input } from "@/Components/ui/input";
 import { Search } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/Components/ui/button";
+import { Plus } from "lucide-react";
+import ManageToolsModal from "./ManageToolsModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/productionClient";
 import ToolCategoryCard from "./ToolCategoryCard";
 
 export default function ToolsTab({ isAdmin }) {
+  const [showManageTools, setShowManageTools] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState(new Set());
   const [expandedCategories, setExpandedCategories] = useState(new Set());
@@ -115,6 +118,7 @@ export default function ToolsTab({ isAdmin }) {
   }
 
   return (
+    <>
     <div className="h-full flex flex-col">
       <div className="flex-shrink-0 bg-white border-b border-gray-200 p-3 sm:p-6 lg:p-6 overflow-x-auto">
         <div className="flex flex-col gap-3 sm:gap-4 md:gap-6">
@@ -124,14 +128,23 @@ export default function ToolsTab({ isAdmin }) {
               animate={{ opacity: 1, x: 0 }}
               className="text-lg sm:text-xl lg:text-2xl font-normal text-foreground"
             >
-              Tools
+              Categories
             </motion.h2>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-4 flex-shrink-0">
+              {canManageTools && (
+                <button
+                  onClick={() => setShowManageTools(true)}
+                  className="h-8 px-3 bg-[#984063] text-white inline-flex items-center gap-2 whitespace-nowrap rounded flex-shrink-0"
+                >
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" strokeWidth={1.5} />
+                  <span className="text-sm font-light">Add Category & Tool</span>
+                </button>
+              )}
               <Button 
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedCategories(new Set())}
-                className="text-xs sm:text-sm"
+                className="text-xs sm:text-sm text-gray-500 border-gray-200 bg-white hover:bg-gray-50 font-normal"
               >
                 Clear All
               </Button>
@@ -145,7 +158,6 @@ export default function ToolsTab({ isAdmin }) {
                 <button
                   onClick={() => { /* noop - filtering is live */ }}
                   className="px-2 sm:px-3 h-8 bg-[#41436A] text-white rounded flex-shrink-0 flex items-center justify-center"
-                  title="Search tools"
                 >
                   <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                 </button>
@@ -206,11 +218,14 @@ export default function ToolsTab({ isAdmin }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="col-span-1 bg-white hover:border-[#41436A] rounded-lg border flex flex-col min-h-[16rem]"
+                    className="col-span-1 bg-white hover:border-[#41436A] border flex flex-col min-h-[16rem]"
                   >
                     {/* Header strip */}
-                    <div className="bg-[#3B3A5A] text-white px-6 py-4">
-                      <h2 className="text-lg font-normal">{category.name}</h2>
+                    <div className="bg-[#3B3A5A] text-white px-6 py-2">
+                      <h2 className="text-lg font-normal">
+                        {category.name}
+                        <span className="text-sm text-white/80 ml-2">({tools.length})</span>
+                      </h2>
                     </div>
 
                     {/* Body */}
@@ -275,5 +290,11 @@ export default function ToolsTab({ isAdmin }) {
         </AnimatePresence>
       </div>
     </div>
+    <AnimatePresence>
+      {showManageTools && (
+        <ManageToolsModal onClose={() => setShowManageTools(false)} />
+      )}
+    </AnimatePresence>
+    </>
   );
 }

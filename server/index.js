@@ -57,7 +57,7 @@ const app = express();
 
 // Configure CORS. In development we reflect the request origin to avoid
 // mismatches when Vite auto-changes the client port. In production we
-// restrict to the configured CORS_ORIGIN.
+// restrict to the configured CORS_ORIGIN (can be comma-separated for multiple origins).
 let corsOptions;
 if (process.env.NODE_ENV === 'development') {
   corsOptions = {
@@ -67,12 +67,46 @@ if (process.env.NODE_ENV === 'development') {
   };
   console.log('CORS: development mode - reflecting request origin');
 } else {
+  // Support multiple origins separated by commas and simple wildcard patterns using '*'
+  const rawOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+  // Precompile regex patterns for wildcard entries
+  const originMatchers = rawOrigins.map(entry => {
+    if (entry.includes('*')) {
+      // Escape regex special chars except '*', then replace '*' with '.*'
+      const escaped = entry
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*');
+      return { type: 'pattern', value: new RegExp(`^${escaped}$`) };
+    }
+    return { type: 'exact', value: entry };
+  });
+
+  const isAllowedOrigin = (origin) => {
+    return originMatchers.some(m =>
+      m.type === 'exact' ? m.value === origin : m.value.test(origin)
+    );
+  };
+
   corsOptions = {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        console.warn('CORS blocked origin:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     optionsSuccessStatus: 200,
   };
-  console.log('CORS: production mode - allowed origin:', corsOptions.origin);
+  console.log('CORS: production mode - allowed origins:', rawOrigins);
 }
 
 app.use(cors(corsOptions));

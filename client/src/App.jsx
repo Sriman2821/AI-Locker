@@ -6,6 +6,7 @@ import SignupPage from './Pages/SignupPage';
 import ForgotPasswordPage from './Pages/ForgotPasswordPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Component } from 'react';
+import { TooltipProvider } from './Components/ui/tooltip';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -35,7 +36,7 @@ const ProtectedRoute = ({ children }) => {
   
   if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center">
+      <div className="min-h-screen w-full flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Loading...</h2>
           <p className="text-gray-600">Checking authentication...</p>
@@ -58,7 +59,7 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
         <div className="text-lg text-gray-600">Loading...</div>
       </div>
     );
@@ -98,9 +99,11 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <ErrorBoundary fallback={<div>Something went wrong. Please refresh the page.</div>}>
-          <AppRoutes />
-        </ErrorBoundary>
+        <TooltipProvider delayDuration={200}>
+          <ErrorBoundary fallback={<div>Something went wrong. Please refresh the page.</div>}>
+            <AppRoutes />
+          </ErrorBoundary>
+        </TooltipProvider>
       </AuthProvider>
     </Router>
   );

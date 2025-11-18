@@ -15,8 +15,10 @@ import {
   SelectValue,
 } from "@/Components/ui/select";
 import ConfirmModal from "@/Components/ui/ConfirmModal";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 export default function MaterialModal({ material, topicId, onClose }) {
+  useBodyScrollLock(true);
   const [formData, setFormData] = useState({
     topic_id: material?.topic_id || topicId,
     title: material?.title || "",
@@ -35,7 +37,6 @@ export default function MaterialModal({ material, topicId, onClose }) {
     order: material?.order || 0,
   });
   const [uploading, setUploading] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
   const [errors, setErrors] = useState({});
@@ -85,6 +86,53 @@ export default function MaterialModal({ material, topicId, onClose }) {
       });
     }
   }, [material]);
+
+  // helper to reset form to original material values (do not close modal)
+  const resetForm = () => {
+    setFormData({
+      topic_id: material?.topic_id || topicId,
+      title: material?.title || "",
+      description: material?.description || "",
+      type: material?.type || (material?.files?.length ? "file" : "link"),
+      url: "",
+      file_url: "",
+      file_name: "",
+      links: material?.links?.length ? material.links : (material?.url ? [{ url: material.url, name: material.url }] : []),
+      files: material?.files?.length ? material.files : (material?.file_url ? [{ url: material.file_url, name: material.file_name || "File", type: "file" }] : []),
+      assigned_user: material?.assigned_user || "",
+      session_number: material?.session_number || "",
+      date_presented: material?.date_presented || "",
+      order: material?.order || 0,
+    });
+    setErrors({});
+    // update snapshot so the form is considered not dirty after reset
+    try {
+      initialSnapshotRef.current = JSON.stringify({
+        title: material?.title || "",
+        description: material?.description || "",
+        assigned_user: material?.assigned_user || "",
+        session_number: material?.session_number || "",
+        date_presented: material?.date_presented || "",
+        links: (material?.links || (material?.url ? [{ url: material.url, name: material.url }] : [])).map(l => ({ url: l.url || "", name: l.name || "" })),
+        files: (material?.files || (material?.file_url ? [{ url: material.file_url, name: material.file_name || "File", type: "" }] : [])).map(f => ({ url: f.url || "", name: f.name || "", type: f.type || "" })),
+      });
+    } catch (e) {
+      // ignore
+    }
+    setIsDirty(false);
+  };
+
+  // Prevent closing modal with Escape key; only the X button will close it
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, []);
 
   // Track dirty state whenever form data changes
   useEffect(() => {
@@ -156,7 +204,6 @@ export default function MaterialModal({ material, topicId, onClose }) {
         files: [...(prev.files || []), ...uploaded],
         type: "file",
       }));
-      setUploadedFileName(uploaded.map(u => u.name).join(", "));
     } catch (error) {
       alert(error?.message || "Failed to upload file(s)");
     }
@@ -290,19 +337,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-3 sm:p-4"
-      onClick={(e) => {
-        e.stopPropagation();
-        if (isDirty) {
-          setConfirmAction({
-            type: "save-and-exit",
-            title: "Unsaved changes",
-            description: "You have unsaved changes. Save and exit?",
-          });
-        } else {
-          onClose();
-        }
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-3 sm:p-4"
     >
       <motion.div
         initial={{ scale: 0.95 }}
@@ -323,8 +358,8 @@ export default function MaterialModal({ material, topicId, onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-8 space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
             <div className="col-span-full">
               <Label htmlFor="title" className="text-xs sm:text-sm font-light text-[#41436A]">Title</Label>
               <Input
@@ -354,7 +389,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
 
             
 
-            <div>
+            <div className="sm:col-span-1">
               <Label htmlFor="assigned_user" className="text-xs sm:text-sm font-light text-[#41436A]">Author</Label>
               <Input
                 id="assigned_user"
@@ -363,11 +398,11 @@ export default function MaterialModal({ material, topicId, onClose }) {
                   setFormData({ ...formData, assigned_user: e.target.value })
                 }
                 placeholder="Author name"
-                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm"
+                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm w-full"
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-1">
               <Label htmlFor="session_number" className="text-xs sm:text-sm font-light text-[#41436A]">Session Number</Label>
               <Input
                 id="session_number"
@@ -377,11 +412,11 @@ export default function MaterialModal({ material, topicId, onClose }) {
                   setFormData({ ...formData, session_number: parseInt(e.target.value) })
                 }
                 placeholder="1"
-                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm"
+                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm w-full"
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-1">
               <Label htmlFor="date_presented" className="text-xs sm:text-sm font-light text-[#41436A]">Date Presented</Label>
               <Input
                 id="date_presented"
@@ -390,7 +425,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
                 onChange={(e) =>
                   setFormData({ ...formData, date_presented: e.target.value })
                 }
-                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm"
+                className="mt-1 border-gray-300 rounded-none focus:border-[#41436A] text-sm w-full"
               />
             </div>
 
@@ -398,22 +433,25 @@ export default function MaterialModal({ material, topicId, onClose }) {
               <Label className="text-xs sm:text-sm font-light text-[#41436A]">Links</Label>
               <div className="mt-1 space-y-2">
                 {(formData.links || []).map((lnk, idx) => (
-                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-start sm:items-center">
-                    <Input
-                      placeholder="https://example.com"
-                      value={lnk.url || ""}
-                      onChange={(e) => updateLink(idx, "url", e.target.value)}
-                      className="col-span-4 border-gray-300 rounded-none focus:border-[#41436A]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => requestRemoveLink(idx)}
-                      className="text-xs text-[#41436A] hover:text-[#984063] justify-self-start"
-                      title="Remove link"
-                      aria-label="Remove link"
-                    >
-                      <Trash2 className="w-4 h-4 text-[#984063]" />
-                    </button>
+                  <div key={idx} className="relative">
+                    <div className="relative">
+                      <Input
+                        placeholder="https://example.com"
+                        value={lnk.url || ""}
+                        onChange={(e) => updateLink(idx, "url", e.target.value)}
+                        className="w-full pr-9 border-gray-300 rounded-none focus:border-[#41436A]"
+                        aria-label={`Link ${idx + 1}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => requestRemoveLink(idx)}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 text-[#41436A] hover:text-[#984063] flex items-center justify-center p-1"
+                        title="Remove link"
+                        aria-label={`Remove link ${idx + 1}`}
+                      >
+                        <Trash2 className="w-4 h-4 text-[#984063]" />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <button
@@ -427,23 +465,27 @@ export default function MaterialModal({ material, topicId, onClose }) {
               </div>
             </div>
 
-            <div className="col-span-2">
+            <div className="col-span-full">
               <Label className="text-sm font-light text-[#41436A]">Upload Files</Label>
               <div className="mt-1">
-                <label className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 hover:border-[#41436A] cursor-pointer transition-colors">
-                  <Upload className="w-4 h-4 text-[#984063]" strokeWidth={1.5} />
-                  <span className="text-sm text-[#41436A] font-light">
-                    {uploading ? "Uploading..." : "Choose file(s)"}
-                    {uploadedFileName ? `: ${uploadedFileName}` : ""}
-                  </span>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={uploading}
-                  />
-                </label>
+                <div className="flex flex-col">
+                  <div>
+                    <label className="inline-flex items-center gap-2 px-3 py-2 border border-transparent bg-[#984063] hover:bg-[#7e3b54] cursor-pointer transition-colors">
+                      <Upload className="w-4 h-4 text-white flex-shrink-0" strokeWidth={1.5} />
+                      <span className="text-sm text-white font-light">
+                        {uploading ? "Uploading..." : "Choose file(s)"}
+                      </span>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                    </label>
+                  </div>
+                  {/* Uploaded filenames are shown in the Files list below; no standalone field here */}
+                </div>
                 {errors.files && <p className="text-sm text-red-500 mt-1">{errors.files}</p>}
                 {(formData.files?.length > 0) && (
                   <div className="mt-1 border border-dashed border-gray-300">
@@ -525,6 +567,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
             description={confirmAction?.description}
             confirmLabel={confirmAction?.type === "save-and-exit" ? "Save & Exit" : "Remove"}
             cancelLabel="Cancel"
+            backdropBlur={!(confirmAction?.type === "save-and-exit") && confirmAction?.type !== "remove-link" && confirmAction?.type !== "remove-file"}
             onClose={() => setConfirmAction(null)}
             onConfirm={() => {
               if (confirmAction?.type === "remove-link") {
@@ -539,10 +582,10 @@ export default function MaterialModal({ material, topicId, onClose }) {
             }}
           />
 
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end pt-3 sm:pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end pt-3 sm:pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={requestCloseModal}
+              onClick={resetForm}
               className="px-3 sm:px-5 py-2 border border-gray-300 text-[#41436A] hover:bg-gray-50 transition-colors text-xs sm:text-sm font-light"
             >
               Cancel
@@ -551,7 +594,7 @@ export default function MaterialModal({ material, topicId, onClose }) {
               type="button"
               onClick={handleUpdate}
               disabled={mutation.isPending || uploading}
-              className="px-5 py-2 bg-[#41436A] text-white transition-colors text-sm font-light"
+              className="px-5 py-2 bg-[#984063] text-white transition-colors text-sm font-light"
             >
               {mutation.isPending ? "Saving..." : material ? "Update" : "Add"}
             </button>

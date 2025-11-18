@@ -1,17 +1,32 @@
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import React from "react";
+import React, { useEffect } from "react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
-export default function ConfirmModal({ open, title = "Confirm", description = "", confirmLabel = "Confirm", cancelLabel = "Cancel", onConfirm, onClose }) {
+export default function ConfirmModal({ open, title = "Confirm", description = "", confirmLabel = "Confirm", cancelLabel = "Cancel", onConfirm, onClose, backdropBlur = true, overlayClosable = true, escapeClosable = true }) {
   if (!open) return null;
+
+  useBodyScrollLock(true);
+
+  useEffect(() => {
+    if (escapeClosable) return; // only add listener when escape should be disabled
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [escapeClosable]);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[#41436A]/30 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 ${backdropBlur ? 'backdrop-blur-sm' : ''} p-4`}
+      onClick={overlayClosable ? onClose : undefined}
     >
       <motion.div
         initial={{ scale: 0.98 }}
@@ -40,7 +55,7 @@ export default function ConfirmModal({ open, title = "Confirm", description = ""
               onClick={() => {
                 if (typeof onConfirm === "function") onConfirm();
               }}
-              className="px-4 py-2 bg-[#41436A] text-white rounded text-sm transition font-light"
+              className="px-4 py-2 bg-[#984063] text-white rounded text-sm transition font-light"
             >
               {confirmLabel}
             </button>

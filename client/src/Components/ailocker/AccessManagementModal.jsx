@@ -12,8 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/Components/ui/select";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 export default function AccessManagementModal({ onClose }) {
+  useBodyScrollLock(true);
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
   const [roleError, setRoleError] = useState("");
@@ -190,7 +192,7 @@ export default function AccessManagementModal({ onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[#41436A]/20 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4"
       onClick={(e) => {
         // Always call handleClose which will show warning if needed
         handleClose();
@@ -261,7 +263,7 @@ export default function AccessManagementModal({ onClose }) {
         </div>
 
         {/* Users List */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <p className="text-sm text-gray-400 font-light">Loading users...</p>
@@ -331,7 +333,7 @@ export default function AccessManagementModal({ onClose }) {
 
         {/* Capabilities Editor (admins only) */}
         <div ref={permsRef} className={`p-4 border-t ${highlightColor === 'red' ? 'border-red-300' : 'border-gray-200'} bg-gray-50 ${highlightPermissions ? (highlightColor === 'blue' ? 'ring-2 ring-blue-400/50 rounded-md' : 'ring-2 ring-red-400/50 rounded-md') : ''}`}>
-          <h3 className="text-sm font-medium text-[#41436A] mb-3">Admin Permissions</h3>
+          <h3 className="text-sm font-medium text-[#41436A] mb-2">Admin Permissions</h3>
           
           {roleError && (
             <div className="mb-3 p-3 bg-red-50 border border-red-300 text-xs rounded">

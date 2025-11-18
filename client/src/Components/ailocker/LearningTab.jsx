@@ -10,6 +10,7 @@ import TopicModal from "./TopicModal";
 import MaterialModal from "./MaterialModal";
 import MaterialCard from "./MaterialCard";
 import ConfirmModal from '@/Components/ui/ConfirmModal';
+import DescriptionModal from './DescriptionModal';
 
 // Admin action permissions
 const AdminActions = {
@@ -32,6 +33,9 @@ export default function LearningTab({ isAdmin }) {
   const [localMaterials, setLocalMaterials] = useState(null);
   const [materialCaps, setMaterialCaps] = useState({ add: !!isAdmin, edit: !!isAdmin, delete: !!isAdmin });
   const [topicCaps, setTopicCaps] = useState({ add: !!isAdmin, edit: !!isAdmin, delete: !!isAdmin });
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const [descriptionModalText, setDescriptionModalText] = useState("");
+  const [descriptionModalTitle, setDescriptionModalTitle] = useState("Description");
 
   const queryClient = useQueryClient();
 
@@ -143,23 +147,30 @@ export default function LearningTab({ isAdmin }) {
     <div className="h-full flex flex-col md:flex-row">
       {/* Left Panel - Topics */}
   <div className="w-full md:w-[22%] lg:w-[19%] border-r border-gray-200 bg-gray-50 flex flex-col">
-        <div className="flex-shrink-0 p-3 sm:p-6 lg:p-8 border-b border-gray-200 bg-white">
-          <div className="flex items-center justify-between mb-3 sm:mb-6">
-            <h2 className="text-sm sm:text-base lg:text-lg font-light text-[#41436A]">Topics</h2>
+        <div className="flex-shrink-0 p-4 sm:p-8 lg:p-5 border-b border-gray-200 bg-white min-h-[68px] sm:min-h-[96px] overflow-visible">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm sm:text-base lg:text-3xl font-light text-[#41436A]">Topics</h2>
             {isAdmin && topicCaps.add && (
-              <button
-                onClick={() => {
-                  setEditingTopic(null);
-                  setShowTopicModal(true);
-                }}
-                className="w-6 sm:w-8 h-6 sm:h-8 border border-[#41436A] text-[#41436A] hover:bg-[#41436A] hover:text-white hover:border-[#41436A] transition-all flex items-center justify-center flex-shrink-0"
-              title="Add Topics">
-                <Plus className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
-              </button>
+              <div title="Add topic">
+                <button
+                  onClick={() => {
+                    setEditingTopic(null);
+                    setShowTopicModal(true);
+                  }}
+                  className="w-8 h-8 sm:w-8 sm:h-8 border text-white bg-[#984063] transition-all flex items-center justify-center"
+                  title=""
+                >
+                  <Plus className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} title="" />
+                </button>
+              </div>
             )}
           </div>
-            <div className="mt-2 sm:mt-3">
-            <div className="flex items-center gap-2 w-full sm:w-64 ml-auto">
+          
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+          <div className="mb-3">
+            <div className="flex items-center gap-2 w-full">
               <Input
                 value={topicSearch}
                 onChange={(e) => setTopicSearch(e.target.value)}
@@ -172,15 +183,12 @@ export default function LearningTab({ isAdmin }) {
               <button
                 onClick={() => { /* noop - topicSearch updates filter live */ }}
                 className="px-3 h-8 bg-[#41436A] text-white rounded flex items-center justify-center"
-                title="Search topics"
               >
                 <Search className="w-4 h-4" strokeWidth={1.5} />
               </button>
             </div>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
           {filteredTopics.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <p className="mb-4 font-light text-sm sm:text-base">No topics found</p>
@@ -193,7 +201,7 @@ export default function LearningTab({ isAdmin }) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className={`
-                    group relative p-3 sm:p-5 cursor-pointer transition-all
+                    group relative p-3 sm:p-3 cursor-pointer transition-all
                     ${
                       selectedTopic?.id === topic.id
                         ? "bg-white border-l-2 border-[#41436A]"
@@ -206,9 +214,23 @@ export default function LearningTab({ isAdmin }) {
                     <div className="flex-1 min-w-0">
                       <h3 title={topic.title} className="font-normal text-base sm:text-lg text-[#41436A] mb-1 truncate">{topic.title}</h3>
                       {topic.description && (
-                        <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 font-light">
-                          {topic.description}
-                        </p>
+                        <div className="mt-0.5">
+                          <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 font-light">
+                            {topic.description}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDescriptionModalTitle(topic.title);
+                              setDescriptionModalText(topic.description);
+                              setShowDescriptionModal(true);
+                            }}
+                            className="mt-1 text-[11px] sm:text-xs text-[#984063] hover:underline"
+                          >
+                            More
+                          </button>
+                        </div>
                       )}
                     </div>
                     {isAdmin === true && (topicCaps.edit || topicCaps.delete) && (
@@ -256,52 +278,60 @@ export default function LearningTab({ isAdmin }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {selectedTopic ? (
           <>
-            <div className="flex-shrink-0 p-4 sm:p-8 lg:p-6 border-b border-gray-200 bg-white overflow-y-auto max-h-48 sm:max-h-none">
-          <div className="flex items-start justify-between gap-4 sm:gap-6">
-            <div className="flex-1 min-w-0">
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#41436A] mb-2 sm:mb-3">
+            <div className="flex-shrink-0 p-4 sm:p-8 lg:p-6 border-b border-gray-200 bg-white min-h-[68px] sm:min-h-[96px]">
+              <div className="flex items-center justify-between gap-4 sm:gap-6">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#41436A] mb-0">
                     {selectedTopic.title}
                   </h2>
                   {selectedTopic.description && (
-                    <p className="text-xs sm:text-sm text-gray-500 font-light mb-4 sm:mb-6 line-clamp-3">{selectedTopic.description}</p>
+                    <div className="mt-1">
+                      <p className="text-xs sm:text-sm text-gray-500 font-light line-clamp-3">{selectedTopic.description}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDescriptionModalTitle(selectedTopic.title);
+                          setDescriptionModalText(selectedTopic.description);
+                          setShowDescriptionModal(true);
+                        }}
+                        className="mt-1 text-[11px] sm:text-xs text-[#984063] hover:underline"
+                      >
+                        More
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                <div className="w-full sm:w-64 ml-4 sm:ml-6">
-                  <div className="flex items-center gap-2 justify-end">
-                    <Input
-                      value={materialSearch}
-                      onChange={(e) => setMaterialSearch(e.target.value)}
-                      placeholder="Search materials..."
-                      className="h-8 px-3 border-gray-300 rounded-none text-sm w-full"
-                    />
+                <div className="flex items-center gap-2 w-full sm:w-96">
+                  {isAdmin && materialCaps.add && (
                     <button
-                      onClick={() => { /* noop - materialSearch filters live */ }}
-                      className="px-2 sm:px-3 h-8 bg-[#41436A] text-white rounded flex-shrink-0 flex items-center justify-center"
-                      title="Search materials"
+                      onClick={() => {
+                        setEditingMaterial(null);
+                        setShowMaterialModal(true);
+                      }}
+                      className="h-8 px-3 bg-[#984063] text-white inline-flex items-center gap-3 whitespace-nowrap rounded flex-shrink-0 mr-2"
                     >
-                      <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4" strokeWidth={1.5} />
+                      <span className="text-sm">Add Material</span>
                     </button>
-                  </div>
-                </div>
-              </div>
-
-              {isAdmin && materialCaps.add && (
-                <div className="mt-3 sm:mt-4">
+                  )}
+                  <Input
+                    value={materialSearch}
+                    onChange={(e) => setMaterialSearch(e.target.value)}
+                    placeholder="Search materials..."
+                    className="h-8 px-3 border-gray-300 rounded-none text-sm w-full"
+                  />
                   <button
-                    onClick={() => {
-                      setEditingMaterial(null);
-                      setShowMaterialModal(true);
-                    }}
-                    className="px-5 py-2 border border-[#41436A] text-[#41436A] hover:bg-[#41436A] hover:text-white transition-all text-sm font-light"
+                    onClick={() => { /* noop - materialSearch filters live */ }}
+                    className="px-2 sm:px-3 h-8 bg-[#41436A] text-white rounded flex-shrink-0 flex items-center justify-center"
                   >
-                    Add Material
+                    <Search className="w-3 sm:w-4 h-3 sm:h-4" strokeWidth={1.5} />
                   </button>
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-12">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-9">
               {filteredMaterials.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center text-gray-400">
@@ -339,6 +369,12 @@ export default function LearningTab({ isAdmin }) {
         {showTopicModal && (
           <TopicModal
             topic={editingTopic}
+            onCreated={(newTopic) => {
+              // when a new topic is created, select it and close the modal
+              setSelectedTopic(newTopic);
+              setShowTopicModal(false);
+              setEditingTopic(null);
+            }}
             onClose={() => {
               setShowTopicModal(false);
               setEditingTopic(null);
@@ -363,6 +399,7 @@ export default function LearningTab({ isAdmin }) {
         open={!!confirmAction}
         title={confirmAction?.title}
         description={confirmAction?.description}
+        backdropBlur={confirmAction?.type !== "delete-material"}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onClose={() => setConfirmAction(null)}
@@ -374,6 +411,12 @@ export default function LearningTab({ isAdmin }) {
           }
           setConfirmAction(null);
         }}
+      />
+      <DescriptionModal
+        open={showDescriptionModal}
+        text={descriptionModalText}
+        title={descriptionModalTitle}
+        onClose={() => setShowDescriptionModal(false)}
       />
     </div>
   );

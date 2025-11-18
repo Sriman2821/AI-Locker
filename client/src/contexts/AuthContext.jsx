@@ -60,6 +60,7 @@ export const AuthProvider = ({ children }) => {
    const login = async (email, password) => {
      const response = await base44.auth.login(email, password);
      localStorage.setItem('token', response.token);
+    try { localStorage.setItem('ai_locker_active_tab', 'learning'); } catch {}
      setUser(response.user);
      return response.user;
    };
@@ -67,12 +68,14 @@ export const AuthProvider = ({ children }) => {
    const signup = async (userData) => {
      const response = await base44.auth.signup(userData);
      localStorage.setItem('token', response.token);
+    try { localStorage.setItem('ai_locker_active_tab', 'learning'); } catch {}
      setUser(response.user);
      return response.user;
    };
  
    const logout = () => {
      localStorage.removeItem('token');
+    try { localStorage.setItem('ai_locker_active_tab', 'learning'); } catch {}
      setUser(null);
    };
  

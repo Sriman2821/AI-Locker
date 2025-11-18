@@ -1,13 +1,10 @@
 import { useState } from "react";
-import { Plus, FolderCog } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import ManageToolsModal from "./ManageToolsModal";
-import AddSourceCodeModal from "./AddSourceCodeModal";
-
 export default function AdminControls({ activeTab }) {
-  const [showManageTools, setShowManageTools] = useState(false);
-  const [showAddSourceCode, setShowAddSourceCode] = useState(false);
+  // Floating admin controls have been moved into page headers where appropriate.
+  // Keep this component minimal for any future floating controls.
+  const [unused, setUnused] = useState(false);
 
   return (
     <>
@@ -16,34 +13,11 @@ export default function AdminControls({ activeTab }) {
         animate={{ opacity: 1 }}
         className="fixed bottom-8 right-8 flex flex-col gap-3"
       >
-        {activeTab === "tools" && (
-          <button
-            onClick={() => setShowManageTools(true)}
-            className="w-12 h-12 bg-[#41436A] text-white transition-all flex items-center justify-center"
-            title="Manage Tools & Categories"
-          >
-            <FolderCog className="w-5 h-5" strokeWidth={1.5} />
-          </button>
-        )}
-
-        {activeTab === "sourcecode" && (
-          <button
-            onClick={() => setShowAddSourceCode(true)}
-            className="w-12 h-12 bg-[#41436A] text-white transition-all flex items-center justify-center"
-            title="Add Repository"
-          >
-            <Plus className="w-5 h-5" strokeWidth={1.5} />
-          </button>
-        )}
+        {/* Floating controls removed — management moved into page headers */}
       </motion.div>
 
       <AnimatePresence>
-        {showManageTools && (
-          <ManageToolsModal onClose={() => setShowManageTools(false)} />
-        )}
-        {showAddSourceCode && (
-          <AddSourceCodeModal onClose={() => setShowAddSourceCode(false)} />
-        )}
+        {/* No floating modals here; page-level modals handle admin actions. */}
       </AnimatePresence>
     </>
   );
