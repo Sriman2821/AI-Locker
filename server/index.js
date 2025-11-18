@@ -110,6 +110,10 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 app.use(cors(corsOptions));
+// Explicitly allow common methods/headers and handle preflight globally
+corsOptions.methods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'];
+corsOptions.allowedHeaders = ['Content-Type', 'Authorization'];
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use('/uploads', express.static(uploadsRoot));
 
