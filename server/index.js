@@ -97,22 +97,22 @@ if (process.env.NODE_ENV === 'development') {
       if (!origin) return callback(null, true);
 
       if (isAllowedOrigin(origin)) {
-        callback(null, true);
-      } else {
-        console.warn('CORS blocked origin:', origin);
-        callback(new Error('Not allowed by CORS'));
+        return callback(null, true);
       }
+      console.warn('CORS blocked origin:', origin, 'Allowed list:', rawOrigins);
+      // Do not error; respond without CORS headers to avoid 500s on preflight
+      return callback(null, false);
     },
     credentials: true,
     optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   };
   console.log('CORS: production mode - allowed origins:', rawOrigins);
 }
 
 app.use(cors(corsOptions));
-// Explicitly allow common methods/headers and handle preflight globally
-corsOptions.methods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'];
-corsOptions.allowedHeaders = ['Content-Type', 'Authorization'];
+// Explicitly handle preflight globally
 app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use('/uploads', express.static(uploadsRoot));
